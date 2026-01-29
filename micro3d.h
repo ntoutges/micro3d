@@ -4,6 +4,7 @@
 #include "./ocamera.h"
 #include "./scene.h"
 #include "./object.h"
-#include "segment.h"
+#include "./segment.h"
+#include "./transform.h"
 
 #endif

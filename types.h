@@ -105,10 +105,10 @@ typedef struct m3_vec {
 } m3_vec;
 
 typedef struct m3_quat {
-    int8_t w;
     int8_t x;
     int8_t y;
     int8_t z;
+    int8_t w;
 } m3_quat;
 
 #endif

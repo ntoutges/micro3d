@@ -30,10 +30,10 @@ m3_object_handle_t m3_object_create(m3_scene_handle_t scene) {
     object->z = 0;
 
     // Populate object orientation
-    object->qw = 127;
     object->qx = 0;
     object->qy = 0;
     object->qz = 0;
+    object->qw = 127;
 
     // Initialize arraylist holding segments
     object->scap = 0b1111; // Special case -> capacity = 0
