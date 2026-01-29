@@ -1,5 +1,4 @@
 #include "transform.h"
-#include "stdio.h"
 
 void m3_vec_add(m3_vec* dest, m3_vec src) {
     dest->x += src.x;
@@ -7,19 +6,19 @@ void m3_vec_add(m3_vec* dest, m3_vec src) {
     dest->z += src.z;
 }
 
-int16_t m3_vec_dot(m3_vec* a, m3_vec b) {
-    return a->x * b.x
-        + a->y * b.y
-        + a->z * b.z;
+int16_t m3_vec_dot(m3_vec a, m3_vec b) {
+    return a.x * b.x
+        + a.y * b.y
+        + a.z * b.z;
 }
 
-m3_vec m3_vec_cross(m3_vec* a, m3_vec b) {
+m3_vec m3_vec_cross(m3_vec a, m3_vec b) {
     m3_vec result;
 
     // Perform cross product math
-    result.x = (a->y * b.z - a->z * b.y) / 127;
-    result.y = (a->z * b.x - a->x * b.z) / 127;
-    result.z = (a->x * b.y - a->y * b.x) / 127;
+    result.x = roundf((a.y * b.z - a.z * b.y) / 127.0);
+    result.y = roundf((a.x * b.z - a.z * b.x) / 127.0);
+    result.z = roundf((a.x * b.y - a.y * b.x) / 127.0);
 
     return result;
 }
@@ -76,66 +75,144 @@ void m3_quat_normalize(m3_quat* quat) {
 }
 
 void m3_vec_rotate(m3_vec* vec, m3_quat quat) {
-    m3_vec base = { vec->x, vec->y, vec->z }; // Store copy of vec
+    m3_vec base = *vec; // Store copy of vec
 
     // Precompute reused values
     // Squares
-    int16_t x2 = quat.x * quat.x;
-    int16_t y2 = quat.y * quat.y;
-    int16_t z2 = quat.z * quat.z;
+    float x2 = quat.x * quat.x / (127.0 * 127.0);
+    float y2 = quat.y * quat.y / (127.0 * 127.0);
+    float z2 = quat.z * quat.z / (127.0 * 127.0);
     
     // Pariwise products
-    int16_t xy = quat.x * quat.y;
-    int16_t xz = quat.x * quat.z;
-    int16_t yz = quat.y * quat.z;
+    float xy = quat.x * quat.y / (127.0 * 127.0);
+    float xz = quat.x * quat.z / (127.0 * 127.0);
+    float yz = quat.y * quat.z / (127.0 * 127.0);
     
     // Scalar products
-    int16_t xw = quat.x * quat.w;
-    int16_t yw = quat.y * quat.w;
-    int16_t zw = quat.z * quat.w;
+    float xw = quat.x * quat.w / (127.0 * 127.0);
+    float yw = quat.y * quat.w / (127.0 * 127.0);
+    float zw = quat.z * quat.w / (127.0 * 127.0);
     
     // Perform vector rotation
-    vec->x = (1 - 2*y2 - 2*z2) * base.x + 2 * (xy - zw)     * base.y + 2 * (xz + yw)     * vec->z;
-    vec->y = 2 * (xy + zw)     * base.x + (1 - 2*x2 - 2*z2) * base.y + 2 * (yz - xw)     * vec->z;
-    vec->z = 2 * (xz - yw)     * base.x + 2 * (yz - xw)     * base.y + (1 - 2*x2 - 2*y2) * vec->z;
+    vec->x = roundf((1 - 2*y2 - 2*z2) * base.x + 2 * (xy - zw)     * base.y + 2 * (xz + yw)     * base.z);
+    vec->y = roundf(2 * (xy + zw)     * base.x + (1 - 2*x2 - 2*z2) * base.y + 2 * (yz - xw)     * base.z);
+    vec->z = roundf(2 * (xz - yw)     * base.x + 2 * (yz - xw)     * base.y + (1 - 2*x2 - 2*y2) * base.z);
 }
 
 void m3_quat_rotate(m3_quat* dest, m3_quat src) {
     m3_quat left = { dest->x, dest->y, dest->z, dest->w }; // Store copy of dest
 
     // Perform quaternion composition
-    dest->x = left.w * src.x + left.x * src.w + left.y * src.z - left.z * src.y;
-    dest->y = left.w * src.y - left.x * src.z + left.y * src.w + left.z * src.x;
-    dest->z = left.w * src.z + left.x * src.y - left.y * src.x + left.z * src.w;
-    dest->w = left.w * src.w - left.x * src.x - left.y * src.y - left.z - src.z;
+    dest->x = roundf((left.w * src.x + left.x * src.w + left.y * src.z - left.z * src.y) / 127.0);
+    dest->y = roundf((left.w * src.y - left.x * src.z + left.y * src.w + left.z * src.x) / 127.0);
+    dest->z = roundf((left.w * src.z + left.x * src.y - left.y * src.x + left.z * src.w) / 127.0);
+    dest->w = roundf((left.w * src.w - left.x * src.x - left.y * src.y - left.z - src.z) / 127.0);
+
+    printf(
+        "Rotate: (%.1f, %.1f, %.1f, %.1f) * (%.1f, %.1f, %.1f, %.1f) = (%.1f, %.1f, %.1f, %.1f)\n",
+        left.x / 127.0, left.y / 127.0, left.z / 127.0, left.w / 127.0,
+        src.x / 127.0, src.y / 127.0, src.z / 127.0, src.w / 127.0,
+        dest->x / 127.0, dest->y / 127.0, dest->z / 127.0, dest->w / 127.0
+    );
 }
 
-m3_quat m3_vec_to_quat(m3_vec dir, m3_vec _up) {
+// OLD: uses fragile matrix math to transform vectors
+// m3_quat m3_vec_to_quat(m3_vec dir, m3_vec _up) {
 
-    // Create unit basis vector
-    m3_vec orth = m3_vec_cross(&_up, dir);
-    m3_vec_normalize(&orth);
+//     // Create unit basis vector
+//     m3_vec orth = m3_vec_cross(_up, dir);
+//     m3_vec_normalize(&orth);
 
-    printf("dir: (%d, %d, %d)\n", dir.x, dir.y, dir.z);
-    printf("orth: (%d, %d, %d)\n", orth.x, orth.y, orth.z);
+//     // Recompute "up" vector to garuntee orthogonality
+//     m3_vec up = m3_vec_cross(dir, orth);
+//     m3_vec_normalize(&up);
 
-    // Recompute "up" vector to garuntee orthogonality
-    m3_vec up = m3_vec_cross(&dir, orth);
+//     // Important intermediates
+//     float trace = (dir.x + orth.y + up.z) / 127.0; // Used to apply rule of dir/up vector default positioning
 
-    printf("up: (%d, %d, %d)\n", up.x, up.y, up.z);
+//     // @TODO: Handle case where (t < 0)
 
-    // Important intermediates
-    float trace = (dir.x + orth.y + up.z) / 127.0; // Used to apply rule of dir/up vector default positioning
+//     float scale = sqrtf(trace + 1) * 2; // Used to maintain proper scale
 
-    // @TODO: Handle case where (t < 0)
+//     // Create/return new quaternion
+//     m3_quat result = {
+//         (orth.z - up.y) / scale,
+//         (up.x - dir.z) / scale,
+//         (dir.y - orth.x) / scale,
+//         127.0 * scale / 4.0,
+//     };
+//     m3_quat_normalize(&result);
 
-    float scale = sqrtf(trace + 1) * 2; // Used to maintain proper scale?
+//     return result;
+// }
 
-    // Create/return new quaternion
-    return (m3_quat){
-        (up.y - orth.z) / scale,
-        (dir.z - up.x) / scale,
-        (orth.x - dir.y) / scale,
-        127.0 * scale / 4.0,
+// New: uses "2 stage" method, more resistant to 8-bit fixed-point errors
+m3_quat m3_vec_to_quat(m3_vec dir, m3_vec up) {
+    m3_vec_normalize(&up);
+
+    // Calculate magnitude of q1 quat
+    float mag1 = sqrtf(
+        dir.z * dir.z
+        + dir.y * dir.y
+        + (dir.x + 127) * (dir.x + 127)
+    ) / 127.0;
+
+    // Rotate +X axis to align with 'dir'; Auto-normalize
+    m3_quat q1 = {
+        0,
+        roundf(-dir.z / mag1),
+        roundf(dir.y / mag1),
+        roundf((dir.x + 127) / mag1)
     };
+
+    // Rotate +Z axis to align with 'up'
+    m3_vec u1 = { 0, 0, 127 };
+    m3_vec_rotate(&u1, q1);
+
+    // Project onto plane perpendicular to 'dir'
+    int16_t d1 = m3_vec_dot(u1, dir);
+    int16_t d2 = m3_vec_dot(up, dir);
+
+    m3_vec u1p = {
+        u1.x - (dir.x * d1) / 127,
+        u1.y - (dir.y * d1) / 127,
+        u1.z - (dir.z * d1) / 127
+    };
+    m3_vec u2p = {
+        up.x - (dir.x * d2) / 127,
+        up.y - (dir.y * d2) / 127,
+        up.z - (dir.z * d2) / 127
+    };
+
+    m3_vec_normalize(&u1p);
+    m3_vec_normalize(&u2p);
+
+    // Roll correction
+    int16_t dot = m3_vec_dot(u1p, u2p) / 127;
+    m3_vec cross = m3_vec_cross(u1p, u2p);
+
+    int8_t sign = m3_vec_dot(cross, dir) >= 0 ? 1 : -1;
+
+    // Halsf angle terms
+    int16_t w2 = sqrtf(127 + dot) * 127.0 / 2.0;
+    float s2 = sqrtf(127 - dot) * 2.0;
+
+    // Calculate magnitude of q2 quat
+    float mag2 = sqrtf(
+        s2*s2 * (dir.x*dir.x + dir.y*dir.y + dir.z*dir.z)
+        + w2 * w2
+    ) / 127.0;
+
+    // Create result quat q2
+    m3_quat q2 = {
+        dir.x * s2 * sign / mag2,
+        dir.y * s2 * sign / mag2,
+        dir.z * s2 * sign / mag2,
+        w2 / mag2
+    };
+
+    // q = q2 * q1
+    m3_quat_rotate(&q2, q1);
+
+    return q2;
 }

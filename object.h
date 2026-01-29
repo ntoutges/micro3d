@@ -149,6 +149,24 @@ m3_err_t m3_object_pset(m3_object_handle_t object, m3_object_handle_t parent);
  */
 m3_err_t m3_object_pclear(m3_object_handle_t object);
 
+// -------- OBJECT SEGMENT TRAVERSAL --------
+
+/**
+ * Get the number of segments an object has access to
+ * @param object    The handle of the object to read
+ * @returns         The number of segments this object has access to, in the range [0, 256]
+ * Returns 0 if object doesn't exist
+ */
+uint16_t m3_object_segment_length(m3_object_handle_t object);
+
+/**
+ * Get the raw buffer of segment ids an object has access to. This becomes invalid as soon as the object's segment list is modified
+ * @param object    The handle of the object to read
+ * @returns         The buffer holding the segment ids
+ * Returns nullptr if object doesn't exist
+ */
+uint8_t* m3_object_segment_buf(m3_object_handle_t object);
+
 // -------- OBJECT POSITION --------
 
 /**

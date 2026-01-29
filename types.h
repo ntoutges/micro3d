@@ -4,6 +4,20 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+// Helpful 3d structs
+typedef struct m3_vec {
+    int8_t x;
+    int8_t y;
+    int8_t z;
+} m3_vec;
+
+typedef struct m3_quat {
+    int8_t x;
+    int8_t y;
+    int8_t z;
+    int8_t w;
+} m3_quat;
+
 // Segment data
 typedef struct m3_segment_t {
     
@@ -24,17 +38,12 @@ typedef struct m3_segment_t {
 // Object data
 typedef struct m3_object_t {
     // Position of the object
-    int8_t x;
-    int8_t y;
-    int8_t z;
+    m3_vec pos;
 
     // Orientation of the object
     // Garunteed to be stored a a unit quat.
     // Values +/- 127 represent a `1`
-    int8_t qw;
-    int8_t qx;
-    int8_t qy;
-    int8_t qz;
+    m3_quat quat;
 
     // Id of parent
     // If set to self: no parent
@@ -96,19 +105,5 @@ typedef enum m3_camera_orientation_t {
     M3_HORIZONTAL_F,
     M3_VERTICAL_F
 } m3_camera_orientation_t;
-
-// Helpful 3d structs
-typedef struct m3_vec {
-    int8_t x;
-    int8_t y;
-    int8_t z;
-} m3_vec;
-
-typedef struct m3_quat {
-    int8_t x;
-    int8_t y;
-    int8_t z;
-    int8_t w;
-} m3_quat;
 
 #endif

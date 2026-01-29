@@ -25,15 +25,10 @@ m3_object_handle_t m3_object_create(m3_scene_handle_t scene) {
     object->parent = index;
 
     // Populate object position
-    object->x = 0;
-    object->y = 0;
-    object->z = 0;
+    object->pos = (m3_vec){ 0, 0, 0 };
 
     // Populate object orientation
-    object->qx = 0;
-    object->qy = 0;
-    object->qz = 0;
-    object->qw = 127;
+    object->quat = (m3_quat){ 0, 0, 0, 127 };
 
     // Initialize arraylist holding segments
     object->scap = 0b1111; // Special case -> capacity = 0
@@ -312,6 +307,24 @@ m3_err_t m3_object_pclear(m3_object_handle_t object) {
     return M3_SUCCESS;
 }
 
+uint16_t m3_object_segment_length(m3_object_handle_t object) {
+    if (object.owner == NULL) return 0;
+
+    // Get object
+    m3_object_t* obj = &(object.owner->obj_buf[object.id]);
+
+    return _m3_object_segments_get_size(obj);
+}
+
+uint8_t* m3_object_segment_buf(m3_object_handle_t object) {
+    if (object.owner == NULL) return NULL;
+
+    // Get object
+    m3_object_t* obj = &(object.owner->obj_buf[object.id]);
+
+    return obj->segments;
+}
+
 m3_err_t m3_object_position(m3_object_handle_t object, m3_vec vec) {
     if (!object.owner) return M3_ERR_EXIST_A;
 
@@ -319,9 +332,7 @@ m3_err_t m3_object_position(m3_object_handle_t object, m3_vec vec) {
     m3_object_t* obj = &(object.owner->obj_buf[object.id]);
 
     // Update internal vector
-    obj->x = vec.x;
-    obj->y = vec.y;
-    obj->z = vec.z;
+    obj->pos = vec;
 
     return M3_SUCCESS;
 }
@@ -333,10 +344,7 @@ m3_err_t m3_object_pivot(m3_object_handle_t object, m3_quat quat) {
     m3_object_t* obj = &(object.owner->obj_buf[object.id]);
 
     // Update internal quaternion
-    obj->qw = quat.w;
-    obj->qx = quat.x;
-    obj->qy = quat.y;
-    obj->qz = quat.z;
+    obj->quat = quat;
 
     return M3_SUCCESS;
 }

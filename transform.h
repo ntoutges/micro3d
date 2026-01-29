@@ -20,7 +20,7 @@ void m3_vec_add(m3_vec* dest, m3_vec src);
  * @param b A vector to dot
  * @returns The result of a . b
  */
-int16_t m3_vec_dot(m3_vec* a, m3_vec b);
+int16_t m3_vec_dot(m3_vec a, m3_vec b);
 
 /**
  * Get the cross product of two input vectors.
@@ -29,7 +29,7 @@ int16_t m3_vec_dot(m3_vec* a, m3_vec b);
  * @param b A vector to cross
  * @returns The result of a x b
  */
-m3_vec m3_vec_cross(m3_vec* a, m3_vec b);
+m3_vec m3_vec_cross(m3_vec a, m3_vec b);
 
 /**
  * Normalize a vector s.t. it has unit magnitude (127, due to packed non-float format)
