@@ -107,13 +107,6 @@ void m3_quat_rotate(m3_quat* dest, m3_quat src) {
     dest->y = roundf((left.w * src.y - left.x * src.z + left.y * src.w + left.z * src.x) / 127.0);
     dest->z = roundf((left.w * src.z + left.x * src.y - left.y * src.x + left.z * src.w) / 127.0);
     dest->w = roundf((left.w * src.w - left.x * src.x - left.y * src.y - left.z - src.z) / 127.0);
-
-    printf(
-        "Rotate: (%.1f, %.1f, %.1f, %.1f) * (%.1f, %.1f, %.1f, %.1f) = (%.1f, %.1f, %.1f, %.1f)\n",
-        left.x / 127.0, left.y / 127.0, left.z / 127.0, left.w / 127.0,
-        src.x / 127.0, src.y / 127.0, src.z / 127.0, src.w / 127.0,
-        dest->x / 127.0, dest->y / 127.0, dest->z / 127.0, dest->w / 127.0
-    );
 }
 
 // OLD: uses fragile matrix math to transform vectors

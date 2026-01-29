@@ -7,5 +7,6 @@
 #include "segment.h"
 #include "transform.h"
 #include "objpos.h"
+#include "raster.h"
 
 #endif
