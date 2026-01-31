@@ -167,6 +167,14 @@ uint16_t m3_object_segment_length(m3_object_handle_t object);
  */
 uint8_t* m3_object_segment_buf(m3_object_handle_t object);
 
+/**
+ * Get the handle of some segment
+ * @param object    The handle of the object which uses the segment
+ * @param index     The index in the object where the segment is used
+ * @returns         The segment handle. Note that this may not exist
+ */
+m3_segment_handle_t m3_object_segment_get(m3_object_handle_t object, uint8_t index);
+
 // -------- OBJECT POSITION --------
 
 /**

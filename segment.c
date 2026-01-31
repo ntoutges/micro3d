@@ -42,6 +42,12 @@ m3_scene_handle_t m3_segment_owner(m3_segment_handle_t segment) {
     return segment.owner;
 }
 
+inline m3_segment_handle_t m3_segment_get(m3_scene_handle_t owner, uint8_t id) {
+    return (m3_segment_handle_t) {
+        owner, id
+    };
+}
+
 m3_err_t m3_segment_offset(m3_segment_handle_t handle, m3_vec vec) {
     if (handle.owner == NULL) return M3_ERR_EXIST_A; // Segment doesn't exist
 
@@ -71,4 +77,9 @@ m3_err_t m3_segment_visible(m3_segment_handle_t handle, bool visible) {
 
     // Success!
     return M3_SUCCESS;
+}
+
+bool m3_segment_visibility(m3_segment_handle_t handle) {
+    if (handle.owner == NULL) return false;
+    return handle.owner->seg_buf[handle.id].visible;
 }

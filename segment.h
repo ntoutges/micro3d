@@ -38,6 +38,14 @@ bool m3_segment_exists(m3_segment_handle_t segment);
  */
 m3_scene_handle_t m3_segment_owner(m3_segment_handle_t segment);
 
+/**
+ * Get a handle to a segment
+ * @param owner The owning scene
+ * @param id    The segment's id within the scene
+ * @returns     The handle to the segment. Note that the segment may not exist.
+ */
+m3_segment_handle_t m3_segment_get(m3_scene_handle_t owner, uint8_t id);
+
 // -------- MODIFICATION --------
 
 /**
@@ -68,5 +76,14 @@ m3_err_t m3_segment_visible(
     m3_segment_handle_t handle,
     bool visible
 );
+
+// -------- GETTERS --------
+
+/**
+ * Get whether this segment is visible or not
+ * @param segment   The handle of the segment to get the owner of
+ * @returns         Whether the segment is visible. If the segment does not exist, a value of `false` is returned
+ */
+bool m3_segment_visibility(m3_segment_handle_t handle);
 
 #endif

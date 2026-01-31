@@ -325,6 +325,21 @@ uint8_t* m3_object_segment_buf(m3_object_handle_t object) {
     return obj->segments;
 }
 
+m3_segment_handle_t m3_object_segment_get(m3_object_handle_t object, uint8_t index) {
+    if (!object.owner) return (m3_segment_handle_t){ NULL, 0 };
+
+    // Get object
+    m3_object_t* obj = &(object.owner->obj_buf[object.id]);
+
+    uint16_t size = _m3_object_segments_get_size(obj);
+    if (index >= size) return (m3_segment_handle_t){ NULL, 0 }; // Invalid segment
+
+    return (m3_segment_handle_t){
+        object.owner,
+        obj->segments[index]
+    };
+}
+
 m3_err_t m3_object_position(m3_object_handle_t object, m3_vec vec) {
     if (!object.owner) return M3_ERR_EXIST_A;
 

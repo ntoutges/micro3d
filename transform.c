@@ -143,6 +143,16 @@ void m3_quat_rotate(m3_quat* dest, m3_quat src) {
 m3_quat m3_vec_to_quat(m3_vec dir, m3_vec up) {
     m3_vec_normalize(&up);
 
+    // Edge case: desired axis exactly opposite +X
+    if (dir.x == -127) {
+        return (m3_quat){
+            up.x,
+            up.y,
+            up.z,
+            0
+        };
+    }
+
     // Calculate magnitude of q1 quat
     float mag1 = sqrtf(
         dir.z * dir.z
@@ -186,7 +196,7 @@ m3_quat m3_vec_to_quat(m3_vec dir, m3_vec up) {
 
     int8_t sign = m3_vec_dot(cross, dir) >= 0 ? 1 : -1;
 
-    // Halsf angle terms
+    // Half angle terms
     int16_t w2 = sqrtf(127 + dot) * 127.0 / 2.0;
     float s2 = sqrtf(127 - dot) * 2.0;
 
