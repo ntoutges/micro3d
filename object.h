@@ -1,5 +1,5 @@
 #ifndef _MICROOBJECT_H
-#define __MICROOBJECT_H
+#define _MICROOBJECT_H
 
 #include "stdio.h"
 #include "stdlib.h"

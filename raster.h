@@ -3,9 +3,18 @@
 
 #include "types.h"
 
+// Bounding box
+typedef struct m3_bb {
+    int8_t x_min;
+    int8_t y_min;
+    int8_t x_max;
+    int8_t y_max;
+} m3_bb;
+
 /**
  * Render a line segment to some buffer target
  * Each rendered pixel is a single bit, where 1 byte makes up a _row_ (left->right) of pixels
+ * Pixels are rendered in the area (0, 0) -> (width, height), all others are ignored
  * @param target    The target to render to
  * @param width     The number of pixels in width. If not a multiple of 8: rounds to next value
  * @param height    The number of pixels in height
@@ -18,10 +27,28 @@ void m3_raster_line(
     uint8_t* target,
     uint8_t width,
     uint8_t height,
-    uint8_t x0,
-    uint8_t y0,
-    uint8_t x1,
-    uint8_t y1
+    int16_t x0,
+    int16_t y0,
+    int16_t x1,
+    int16_t y1
 );
+
+/**
+ * Get the bounding box of a set of arbitrary points
+ * @param x1 The first point's x-position
+ * @param y1 The first point's y-position
+ * @param x2 The second point's x-position
+ * @param y2 The second point's y-position
+ * @returns The created bounding box
+ */
+m3_bb m3_raster_bb(int8_t x1, int8_t y1, int8_t x2, int8_t y2);
+
+/**
+ * Check if two bounding boxes intersect
+ * @param a A bounding box
+ * @param b A bounding box
+ * @returns Whether the bounding boxes intersect
+ */
+bool m3_raster_bb_isect(m3_bb a, m3_bb b);
 
 #endif

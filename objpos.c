@@ -29,9 +29,9 @@ m3_pos_object m3_pos_object_get(m3_object_handle_t object) {
     return pos;
 }
 
-// Notice that this is simply an alias to provide a default parameter
+// Notice that this is basically an alias to provide a default parameter
 inline m3_pos_chain m3_pos_segment_get(m3_pos_object root, uint8_t segment) {
-    return m3_pos_segment_next(root, segment, (m3_vec){ 0, 0, 0 });
+    return m3_pos_segment_next(root, segment, root.loc );
 }
 
 m3_pos_chain m3_pos_segment_next(m3_pos_object root, uint8_t segment, m3_vec prev) {
@@ -59,4 +59,23 @@ m3_pos_chain m3_pos_segment_next(m3_pos_object root, uint8_t segment, m3_vec pre
         l_pos,
         s_pos
     };
+}
+
+void m3_pos_root_reverse(m3_pos_object* root, m3_vec pos, m3_quat quat) {
+    if (root->owner == NULL) return; // Invalid root object
+
+    // Find the inverse of the given quat
+    // Only need the conjugate, as `quat` is garunteed normalized
+    m3_quat inv_quat = m3_quat_conj(quat);
+    
+    // Unrotate root position by `quat`
+    m3_quat_rotate(&(root->rot), inv_quat);
+
+    // Calculate rotation offset
+    m3_vec offset;
+    m3_vec_sub(&offset, pos);
+
+    // Untranslate root position by `pos`
+    m3_vec_sub(&(root->loc), pos);
+    m3_vec_rotate(&(root->loc), inv_quat);
 }

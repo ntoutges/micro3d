@@ -15,6 +15,13 @@
 void m3_vec_add(m3_vec* dest, m3_vec src);
 
 /**
+ * Subtract the `src` vector contents from the `dest` vector
+ * @param dest The vector to store the result in
+ * @param src The vector to subtract from
+ */
+void m3_vec_sub(m3_vec* dest, m3_vec src);
+
+/**
  * Get the dot product of two input vectors
  * @param a A vector to dot
  * @param b A vector to dot
@@ -58,6 +65,14 @@ void m3_vec_rotate(m3_vec* vec, m3_quat quat);
  * @param src The quaternion to add from. Note that this quat _must_ be a normalized
  */
 void m3_quat_rotate(m3_quat* dest, m3_quat src);
+
+/**
+ * Returns the conjugate of some quaternion.
+ * If that quaternion is normalized, this returns the inverse
+ * @param src   The quaternion to find the conjugate of
+ * @returns     The conjugated quaternion
+ */
+m3_quat m3_quat_conj(m3_quat src);
 
 /**
  * Create a unit quaternion from two vectors.

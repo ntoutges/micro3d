@@ -6,6 +6,12 @@ void m3_vec_add(m3_vec* dest, m3_vec src) {
     dest->z += src.z;
 }
 
+void m3_vec_sub(m3_vec* dest, m3_vec src) {
+    dest->x -= src.x;
+    dest->y -= src.y;
+    dest->z -= src.z;
+}
+
 int16_t m3_vec_dot(m3_vec a, m3_vec b) {
     return a.x * b.x
         + a.y * b.y
@@ -107,6 +113,15 @@ void m3_quat_rotate(m3_quat* dest, m3_quat src) {
     dest->y = roundf((left.w * src.y - left.x * src.z + left.y * src.w + left.z * src.x) / 127.0);
     dest->z = roundf((left.w * src.z + left.x * src.y - left.y * src.x + left.z * src.w) / 127.0);
     dest->w = roundf((left.w * src.w - left.x * src.x - left.y * src.y - left.z - src.z) / 127.0);
+}
+
+inline m3_quat m3_quat_conj(m3_quat src) {
+    return (m3_quat){
+        -src.x,
+        -src.y,
+        -src.z,
+        src.w
+    };
 }
 
 // OLD: uses fragile matrix math to transform vectors

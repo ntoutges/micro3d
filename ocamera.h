@@ -1,24 +1,25 @@
 #ifndef _MICROOCAMERA_H
 #define _MICROOCAMERA_H
 
-#include "./types.h"
+#include "stdio.h"
+
+#include "types.h"
+#include "object.h"
+#include "segment.h"
+#include "objpos.h"
+#include "raster.h"
 
 // Define an O(rthographic) CAMERA
 
 // Type definitions for the orthagraphic camera
 typedef struct m3_ocamera_t {
-    // Position of the object
-    int8_t x;
-    int8_t y;
-    int8_t z;
+    // Position of the camera
+    m3_vec pos;
 
-    // Orientation of the object
+    // Orientation of the camera
     // Garunteed to be stored a a unit quat.
     // Values +/- 127 represent a `1`
-    int8_t qw;
-    int8_t qx;
-    int8_t qy;
-    int8_t qz;
+    m3_quat quat;
 
     // Width/height of scene for camera to capture
     uint8_t width;
@@ -38,12 +39,13 @@ typedef m3_ocamera_t* m3_ocamera_handle_t;
  * @returns         A handle to reference this camera later
  * NULL is returned if the camera could not be created (unable to malloc space for camera data)
  */
-m3_ocamera_handle_t m3_ocamera_create(uint8_t width, uint8_t height);
+m3_ocamera_handle_t m3_ocamera_create();
 
 // -------- CAMERA POSITION --------
 
 /**
  * Set the position of an camera in 3d space.
+ * Places the _center_ of the camera at this location
  * @param object    The handle of the camera to modify
  * @param vec       The vector determining the new position
  * @returns         Whether the operation was successful
@@ -51,19 +53,47 @@ m3_ocamera_handle_t m3_ocamera_create(uint8_t width, uint8_t height);
  * M3_SUCCESS: Success
 object/segment * M3_ERR_EXIST_A: The camera does not exist
  */
-m3_err_t me_ocamera_position(m3_ocamera_handle_t camera, m3_vec vec);
+m3_err_t m3_ocamera_position(m3_ocamera_handle_t camera, m3_vec vec);
 
 /**
  * Set the rotation of the camera in 3d space.
- * @param object    The handle of the camera to modify
+ * @param camera    The handle of the camera to modify
  * @param quat      The quaternion determining the new orientation
  * @returns         Whether the operation was successful
  * On failure, the original camera is unmodified
  * M3_SUCCESS: Success
  * M3_ERR_EXIST_A: The camera does not exist
  */
-m3_err_t me_ocamera_pivot(m3_ocamera_handle_t camera, m3_quat vec);
+m3_err_t m3_ocamera_pivot(m3_ocamera_handle_t camera, m3_quat quat);
 
+/**
+ * Set the worldspace width/height of the scene captured by the camera
+ * @param camera    The handle of the camera to modify
+ * @param width     The new width of the camera's captured scene
+ * @param width     The new height of the camera's captured scene
+ * @returns         Whether the operation was successful
+ * On failure, the original camera is unmodified
+ * M3_SUCCESS: Success
+ * M3_ERR_EXIST_A: The camera does not exist
+ */
+m3_err_t m3_ocamera_resize(m3_ocamera_handle_t camera, uint8_t width, uint8_t height);
 
+/**
+ * Render a scene to some target
+ * @param camera    The handle of the camera to modify
+ * @param quat      The quaternion determining the new orientation
+ * @returns         Whether the operation was successful
+ * On failure, the original camera is unmodified
+ * M3_SUCCESS: Success
+ * M3_ERR_EXIST_A: The camera does not exist
+ * M3_ERR_EXIST_B: The scene does not exist
+ */
+m3_err_t m3_ocamera_render(
+    m3_ocamera_handle_t camera,
+    m3_scene_handle_t scene,
+    uint8_t* target,
+    uint8_t width,
+    uint8_t height
+);
 
 #endif

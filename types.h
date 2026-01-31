@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+// Common types used throught the Micro3D library
+
 // Helpful 3d structs
 typedef struct m3_vec {
     int8_t x;
