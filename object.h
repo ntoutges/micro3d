@@ -175,7 +175,7 @@ uint8_t* m3_object_segment_buf(m3_object_handle_t object);
  */
 m3_segment_handle_t m3_object_segment_get(m3_object_handle_t object, uint8_t index);
 
-// -------- OBJECT POSITION --------
+// -------- OBJECT MODIFICATION --------
 
 /**
  * Set the position of an object in 3d space.
@@ -198,5 +198,28 @@ m3_err_t m3_object_position(m3_object_handle_t object, m3_vec vec);
  * M3_ERR_EXIST_A: The object does not exist
  */
 m3_err_t m3_object_pivot(m3_object_handle_t object, m3_quat quat);
+
+/**
+ * Set an object's visibility.
+ * If an object is hidden, all its segments and child objects will _also_ be hidden.
+ * @param object    The handle of the object to modify
+ * @param visible   Whether this object should be made visible or not
+ * @returns         Whether the operation was successful
+ * On failure, the original object is unmodified
+ * M3_SUCCESS: Success
+ * M3_ERR_EXIST_A: The object does not exist
+ */
+m3_err_t m3_object_visible(m3_object_handle_t object, bool visible);
+
+// -------- OBJECT GETTERS --------
+
+/**
+ * Get an object's immediate or inherited
+ * @param object    The handle of the object to read
+ * @param chain     Whether to include parent objects in the calculation. If true: The parent chain will be walked up to determine the ultimate visibility
+ * @returns         The visibility of the object. If invalid data is found, `false` is returned.
+ */
+bool m3_object_visibility(m3_object_handle_t object, bool chain);
+
 
 #endif

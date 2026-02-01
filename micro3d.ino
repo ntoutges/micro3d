@@ -1,8 +1,10 @@
 #include "micro3d.h"
 
 m3_scene_handle_t scene;
-m3_object_handle_t box;
 m3_ocamera_handle_t camera;
+
+m3_object_handle_t box;
+m3_object_handle_t tri;
 
 // Allocate space for camera to render to
 const int width = 32;
@@ -12,7 +14,6 @@ uint8_t target[width * height / 8];
 
 void setup() {
   Serial.begin(115200);
-  Serial.println("BOOT!");
 
   // Create a test scene
   scene = m3_scene_create_d(8, 4);
@@ -29,16 +30,23 @@ void setup() {
   m3_segment_offset(rts, (m3_vec) { -7, -7, 0 });
   // m3_segment_visible(rts, false);
 
-  // Create object to use segments
+  // Create objects to use segments
   box = m3_object_create(scene);
+  tri = m3_object_create(scene);
   m3_object_position(box, (m3_vec) { 0, 0, 0 });
+  m3_object_position(tri, (m3_vec) { 0, 0, 0 });
 
-  // Fill object with segments
+  // Fill objects with segments
   m3_object_push_segment(box, vertical);   // |
   m3_object_push_segment(box, horizontal); // |^
   m3_object_push_segment(box, rts);        // |^
   m3_object_push_segment(box, horizontal); // |#
   m3_object_push_segment(box, vertical);   // |#|
+
+  m3_object_push_segment(tri, vertical);   // |#|
+  m3_object_push_segment(tri, horizontal);   // |#|
+  m3_object_push_segment(tri, rts);   // |#|
+
 
   // Create camera
   camera = m3_ocamera_create();
@@ -58,6 +66,7 @@ void setup() {
 }
 
 const int itts = 12000;
+bool toggle = false;
 
 void loop() {
   uint32_t start = millis();
@@ -66,6 +75,11 @@ void loop() {
   // m3_quat quat = { 0, 0, 89, 89 };
   m3_quat_normalize(&quat);
   m3_ocamera_pivot(camera, quat);
+
+  // Alternately hide/show tri vs. box
+  toggle = !toggle;
+  m3_object_visible(box, toggle);
+  m3_object_visible(tri, !toggle);
 
   // Clear target
   memset(target, 0, sizeof(target));

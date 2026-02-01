@@ -363,3 +363,40 @@ m3_err_t m3_object_pivot(m3_object_handle_t object, m3_quat quat) {
 
     return M3_SUCCESS;
 }
+
+m3_err_t m3_object_visible(m3_object_handle_t object, bool visible) {
+    if (!object.owner) return M3_ERR_EXIST_A;
+
+    // Get object
+    m3_object_t* obj = &(object.owner->obj_buf[object.id]);
+
+    // Update visibility state
+    obj->visible = visible ? 1 : 0;
+}
+
+bool m3_object_visibility(m3_object_handle_t object, bool chain) {
+    if (!object.owner) return false;
+
+    uint8_t head_id = object.id;
+    m3_object_t* head_obj = &(object.owner->obj_buf[object.id]);
+
+    bool visible = head_obj->visible;
+
+    // Walk up chain if required
+    if (chain && visible) {
+        while (head_id != head_obj->parent) {
+            // Walk up the parent chain
+            head_id = head_obj->parent;
+            head_obj = &object.owner->obj_buf[head_id];
+
+            // Encountered some invisible parent object: We are _also_ hidden!
+            if (!head_obj->visible) {
+                visible = false;
+                break;
+            }
+        }
+    }
+
+    return visible;
+
+}

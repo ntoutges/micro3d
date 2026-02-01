@@ -51,12 +51,14 @@ typedef struct m3_object_t {
     // If set to self: no parent
     uint8_t parent;
 
-    // Indices of segments this object is made of
-
     uint8_t scap: 4; // (S)mall (CAP)acity Number of segments able to be used in buf; Stores log2(capacity)
                      // Special case: scap = 0b1111 -> capacity = 0
     uint8_t _marker: 1; // Always non-0: Marks a slot on the scene object heap as occupied
-    uint8_t unused: 3; // Unused
+    
+    uint8_t visible: 1; // Marks whether this object is visilbe (1) or hidden.
+                        // If hidden: all segments and child objects will be hidden
+    
+    uint8_t unused: 2;
 
     uint8_t soffset; // Offset from capacity, where `size = 2**scap - soffset`
 

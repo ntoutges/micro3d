@@ -81,6 +81,9 @@ m3_err_t m3_ocamera_render(
         // Update the handle
         object.id = i;
 
+        // Object is hidden; Ignore!
+        if (!m3_object_visibility(object, true)) continue;
+
         // Get the root position of the object
         m3_pos_object root = m3_pos_object_get(object);
 
