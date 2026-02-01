@@ -1,6 +1,10 @@
 #ifndef _MICRORASTER_H
 #define  _MICRORASTER_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "types.h"
 
 // Bounding box
@@ -50,5 +54,9 @@ m3_bb m3_raster_bb(int8_t x1, int8_t y1, int8_t x2, int8_t y2);
  * @returns Whether the bounding boxes intersect
  */
 bool m3_raster_bb_isect(m3_bb a, m3_bb b);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

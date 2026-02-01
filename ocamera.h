@@ -1,6 +1,10 @@
 #ifndef _MICROOCAMERA_H
 #define _MICROOCAMERA_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "stdio.h"
 
 #include "types.h"
@@ -95,5 +99,9 @@ m3_err_t m3_ocamera_render(
     uint8_t width,
     uint8_t height
 );
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

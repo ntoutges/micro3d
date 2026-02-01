@@ -1,6 +1,10 @@
 #ifndef _MICROTRANSFORM_H
 #define _MICROTRANSFORM_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // Note: All functions in this file assume the input vector/quaternions exist
 
 #include "math.h"
@@ -81,5 +85,9 @@ m3_quat m3_quat_conj(m3_quat src);
  * @param up    The vector indicating the "up" direction of the resulting quaternion
  */
 m3_quat m3_vec_to_quat(m3_vec dir, m3_vec up);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

@@ -1,6 +1,10 @@
 #ifndef _MICROSCENE_H
 #define _MICROSCENE_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "stdio.h"
 #include "string.h"
 #include "stdlib.h"
@@ -32,5 +36,9 @@ m3_scene_handle_t m3_scene_create_s(
     m3_object_t* obj_buf,
     uint8_t obj_size
 );
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

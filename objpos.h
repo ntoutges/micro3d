@@ -1,6 +1,10 @@
 #ifndef _MICROSEGPOS_H
 #define _MICROSEGPOS_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "stdlib.h"
 #include "stdint.h"
 
@@ -56,5 +60,9 @@ m3_pos_chain m3_pos_segment_next(m3_pos_object root, uint8_t segment, m3_vec pre
  * @param quat  The rotation portion of the transformation. Must be normalized
  */
 void m3_pos_root_reverse(m3_pos_object* root, m3_vec pos, m3_quat quat);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

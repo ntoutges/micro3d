@@ -1,6 +1,10 @@
 #ifndef _MICROSEGMENT_H
 #define _MICROSEGMENT_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "stdio.h"
 #include "stdlib.h"
 
@@ -85,5 +89,9 @@ m3_err_t m3_segment_visible(
  * @returns         Whether the segment is visible. If the segment does not exist, a value of `false` is returned
  */
 bool m3_segment_visibility(m3_segment_handle_t handle);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
