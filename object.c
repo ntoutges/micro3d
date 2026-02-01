@@ -30,6 +30,9 @@ m3_object_handle_t m3_object_create(m3_scene_handle_t scene) {
     // Populate object orientation
     object->quat = (m3_quat){ 0, 0, 0, 127 };
 
+    // By default: Mark object as visible
+    object->visible = 1;
+
     // Initialize arraylist holding segments
     object->scap = 0b1111; // Special case -> capacity = 0
     object->soffset = 0; // 0 - 0 = size
@@ -372,6 +375,8 @@ m3_err_t m3_object_visible(m3_object_handle_t object, bool visible) {
 
     // Update visibility state
     obj->visible = visible ? 1 : 0;
+
+    return M3_SUCCESS;
 }
 
 bool m3_object_visibility(m3_object_handle_t object, bool chain) {
@@ -398,5 +403,4 @@ bool m3_object_visibility(m3_object_handle_t object, bool chain) {
     }
 
     return visible;
-
 }

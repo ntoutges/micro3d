@@ -38,15 +38,17 @@ int main() {
     m3_ocamera_resize(camera, 32, 16);
     m3_ocamera_position(camera, (m3_vec){ 0, 0, 0 });
 
-    // m3_vec dir = { 1, 0, 0 };
-    // m3_vec up = { 0, 0, 1 };
+    m3_vec dir = { 1, 1, 1 };
+    m3_vec up = { -1, -1, 1 };
 
-    // m3_vec_normalize(&dir);
-    // m3_vec_normalize(&up);
-    // m3_quat quat = m3_vec_to_quat(dir, up);
+    m3_vec_normalize(&dir);
+    m3_vec_normalize(&up);
+    m3_quat quat = m3_vec_to_quat(dir, up);
 
-    m3_quat quat = { 0, 0, 0, 1 };
-    m3_quat_normalize(&quat);
+    printf("(%f, %f, %f, %f)\n", quat.x / 127.0, quat.y / 127.0, quat.z / 127.0, quat.w / 127.0);
+
+    // m3_quat quat = { 0, 0, 0, 1 };
+    // m3_quat_normalize(&quat);
     m3_ocamera_pivot(camera, quat);
 
     // Allocate space for camera to render to
@@ -55,14 +57,14 @@ int main() {
 
     uint8_t target[width * height / 8];
 
-    const int itts = 12;
-    for (int i = 0; i <= itts; i++) {
+    // const int itts = 12;
+    // for (int i = 0; i <= itts; i++) {
 
         // Clear frame
         memset(target, 0, sizeof(target));
 
-        m3_quat quat = { 0, 0, 127 * sin(i * 3.14159 / itts), 127 * cos(i * 3.14159 / itts) };
-        m3_ocamera_pivot(camera, quat);
+        // m3_quat quat = { 127 * sin(i * 3.14159 / itts), 0, 0, 127 * cos(i * 3.14159 / itts) };
+        // m3_ocamera_pivot(camera, quat);
 
         // Render 
         m3_ocamera_render(camera, scene, target, width, height);
@@ -88,7 +90,7 @@ int main() {
         }
         printf("\n");
 
-        if (i != itts) usleep(500000);
-    }
+    //     if (i != itts) usleep(500000);
+    // }
     return 0;
 }

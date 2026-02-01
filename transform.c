@@ -23,7 +23,7 @@ m3_vec m3_vec_cross(m3_vec a, m3_vec b) {
 
     // Perform cross product math
     result.x = roundf((a.y * b.z - a.z * b.y) / 127.0);
-    result.y = roundf((a.x * b.z - a.z * b.x) / 127.0);
+    result.y = roundf((a.z * b.x - a.x * b.z) / 127.0);
     result.z = roundf((a.x * b.y - a.y * b.x) / 127.0);
 
     return result;
@@ -125,112 +125,36 @@ inline m3_quat m3_quat_conj(m3_quat src) {
 }
 
 // OLD: uses fragile matrix math to transform vectors
-// m3_quat m3_vec_to_quat(m3_vec dir, m3_vec _up) {
+m3_quat m3_vec_to_quat(m3_vec dir, m3_vec _up) {
 
-//     // Create unit basis vector
-//     m3_vec orth = m3_vec_cross(_up, dir);
-//     m3_vec_normalize(&orth);
+    // Create unit basis vector
+    m3_vec orth = m3_vec_cross(_up, dir);
+    m3_vec_normalize(&orth);
 
-//     // Recompute "up" vector to garuntee orthogonality
-//     m3_vec up = m3_vec_cross(dir, orth);
-//     m3_vec_normalize(&up);
-
-//     // Important intermediates
-//     float trace = (dir.x + orth.y + up.z) / 127.0; // Used to apply rule of dir/up vector default positioning
-
-//     // @TODO: Handle case where (t < 0)
-
-//     float scale = sqrtf(trace + 1) * 2; // Used to maintain proper scale
-
-//     // Create/return new quaternion
-//     m3_quat result = {
-//         (orth.z - up.y) / scale,
-//         (up.x - dir.z) / scale,
-//         (dir.y - orth.x) / scale,
-//         127.0 * scale / 4.0,
-//     };
-//     m3_quat_normalize(&result);
-
-//     return result;
-// }
-
-// New: uses "2 stage" method, more resistant to 8-bit fixed-point errors
-m3_quat m3_vec_to_quat(m3_vec dir, m3_vec up) {
+    // Recompute "up" vector to garuntee orthogonality
+    m3_vec up = m3_vec_cross(dir, orth);
     m3_vec_normalize(&up);
 
-    // Edge case: desired axis exactly opposite +X
-    if (dir.x == -127) {
-        return (m3_quat){
-            up.x,
-            up.y,
-            up.z,
-            0
-        };
-    }
+    // Important intermediates
+    float trace = (dir.x + orth.y + up.z) / 127.0; // Used to apply rule of dir/up vector default positioning
 
-    // Calculate magnitude of q1 quat
-    float mag1 = sqrtf(
-        dir.z * dir.z
-        + dir.y * dir.y
-        + (dir.x + 127) * (dir.x + 127)
-    ) / 127.0;
+    // @TODO: Handle case where (t < 0)
 
-    // Rotate +X axis to align with 'dir'; Auto-normalize
-    m3_quat q1 = {
-        0,
-        roundf(-dir.z / mag1),
-        roundf(dir.y / mag1),
-        roundf((dir.x + 127) / mag1)
+    float scale = sqrtf(trace + 1) * 2; // Used to maintain proper scale
+
+    int16_t rx = roundf((orth.z - up.y) / scale);
+    int16_t ry = roundf((up.x - dir.z) / scale);
+    int16_t rz = roundf((dir.y - orth.x) / scale);
+    int16_t rw = roundf(127.0 * scale / 4.0);
+
+    // Normalize rx/ry/rz/wx
+    float inv_mag = 127.0 / sqrtf(rx*rx + ry*ry + rz*rz + rw*rw);
+
+    // Create/return new quaternion
+    return (m3_quat){
+        rx * inv_mag,
+        ry * inv_mag,
+        rz * inv_mag,
+        rw * inv_mag
     };
-
-    // Rotate +Z axis to align with 'up'
-    m3_vec u1 = { 0, 0, 127 };
-    m3_vec_rotate(&u1, q1);
-
-    // Project onto plane perpendicular to 'dir'
-    int16_t d1 = m3_vec_dot(u1, dir);
-    int16_t d2 = m3_vec_dot(up, dir);
-
-    m3_vec u1p = {
-        u1.x - (dir.x * d1) / 127,
-        u1.y - (dir.y * d1) / 127,
-        u1.z - (dir.z * d1) / 127
-    };
-    m3_vec u2p = {
-        up.x - (dir.x * d2) / 127,
-        up.y - (dir.y * d2) / 127,
-        up.z - (dir.z * d2) / 127
-    };
-
-    m3_vec_normalize(&u1p);
-    m3_vec_normalize(&u2p);
-
-    // Roll correction
-    int16_t dot = m3_vec_dot(u1p, u2p) / 127;
-    m3_vec cross = m3_vec_cross(u1p, u2p);
-
-    int8_t sign = m3_vec_dot(cross, dir) >= 0 ? 1 : -1;
-
-    // Half angle terms
-    int16_t w2 = sqrtf(127 + dot) * 127.0 / 2.0;
-    float s2 = sqrtf(127 - dot) * 2.0;
-
-    // Calculate magnitude of q2 quat
-    float mag2 = sqrtf(
-        s2*s2 * (dir.x*dir.x + dir.y*dir.y + dir.z*dir.z)
-        + w2 * w2
-    ) / 127.0;
-
-    // Create result quat q2
-    m3_quat q2 = {
-        dir.x * s2 * sign / mag2,
-        dir.y * s2 * sign / mag2,
-        dir.z * s2 * sign / mag2,
-        w2 / mag2
-    };
-
-    // q = q2 * q1
-    m3_quat_rotate(&q2, q1);
-
-    return q2;
 }
