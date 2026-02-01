@@ -35,8 +35,8 @@ int main() {
 
     // Create camera
     m3_ocamera_handle_t camera = m3_ocamera_create();
-    m3_ocamera_resize(camera, 16, 16);
-    m3_ocamera_position(camera, (m3_vec){ 3, 3, 0 });
+    m3_ocamera_resize(camera, 32, 16);
+    m3_ocamera_position(camera, (m3_vec){ 0, 0, 0 });
 
     // m3_vec dir = { 1, 0, 0 };
     // m3_vec up = { 0, 0, 1 };
@@ -45,40 +45,50 @@ int main() {
     // m3_vec_normalize(&up);
     // m3_quat quat = m3_vec_to_quat(dir, up);
 
-    m3_quat quat = { 0, 0, 0, 10 };
+    m3_quat quat = { 0, 0, 0, 1 };
     m3_quat_normalize(&quat);
     m3_ocamera_pivot(camera, quat);
 
     // Allocate space for camera to render to
-    const int width = 16;
+    const int width = 32;
     const int height = 16;
 
     uint8_t target[width * height / 8];
-    for (int i = 0; i < sizeof(target); i++) target[i] = 0;
 
-    // Render 
-    m3_ocamera_render(camera, scene, target, width, height);
+    const int itts = 12;
+    for (int i = 0; i <= itts; i++) {
 
-    // Print out rasterized image
-    printf("\n");
-    for (int y = height - 1; y >= 0; y--) {
-        printf("| ");
-        for (int x = 0; x < height; x++) {
-            uint8_t row = target[(y*height + x) / 8];
+        // Clear frame
+        memset(target, 0, sizeof(target));
 
-            if (x == height / 2 && y == height / 2) {
-                printf("::");
-                continue;
+        m3_quat quat = { 0, 0, 127 * sin(i * 3.14159 / itts), 127 * cos(i * 3.14159 / itts) };
+        m3_ocamera_pivot(camera, quat);
+
+        // Render 
+        m3_ocamera_render(camera, scene, target, width, height);
+
+        // Print out rasterized image
+        printf("\n");
+        for (int y = height - 1; y >= 0; y--) {
+            printf("| ");
+            for (int x = 0; x < width; x++) {
+                uint16_t index = (y*width + x) / 8;
+                uint8_t row = target[index];
+
+                if (x == width / 2 && y == height / 2) {
+                    printf("::");
+                    continue;
+                }
+                
+                if (row & (0x01 << (x % 8)))
+                    printf("[]");
+                else printf("  ");
             }
-            
-            if (row & (0x01 << x % 8))
-                printf("||");
-            else printf("  ");
+            printf(" |\n");
         }
+        printf("\n");
 
-        printf(" |\n");
+        if (i != itts) usleep(500000);
     }
-    printf("\n");
-
     return 0;
 }

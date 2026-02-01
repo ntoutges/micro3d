@@ -121,7 +121,13 @@ m3_err_t m3_ocamera_render(
             // Only rasterize if bounding box of vector falls within camera
             if (!m3_raster_bb_isect(bbox, camera_bb)) continue;
 
-            // printf("%d: (%d, %d):(%d,%d)\n", j, bbox.x_min, bbox.y_min, bbox.x_max, bbox.y_max);
+            // printf("%d: (%d, %d):(%d,%d)\n",
+            //     j, 
+            //     (int16_t) roundf(prev.live.x * x_scale) + screen_offset_x,
+            //     (int16_t) roundf(prev.live.y * y_scale) + screen_offset_y,
+            //     (int16_t) roundf(pos.live.x * x_scale) + screen_offset_x,
+            //     (int16_t) roundf(pos.live.y * y_scale) + screen_offset_y
+            // );
 
             // Transform desired coordinates to screenspace
             m3_raster_line(

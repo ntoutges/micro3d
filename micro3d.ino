@@ -5,13 +5,14 @@ m3_object_handle_t box;
 m3_ocamera_handle_t camera;
 
 // Allocate space for camera to render to
-const int width = 128;
-const int height = 64;
+const int width = 32;
+const int height = 16;
 
 uint8_t target[width * height / 8];
 
 void setup() {
   Serial.begin(115200);
+  Serial.println("BOOT!");
 
   // Create a test scene
   scene = m3_scene_create_d(8, 4);
@@ -41,8 +42,8 @@ void setup() {
 
   // Create camera
   camera = m3_ocamera_create();
-  m3_ocamera_resize(camera, 16, 16);
-  m3_ocamera_position(camera, (m3_vec){ 0, 0, 0 });
+  m3_ocamera_resize(camera, 32, 16);
+  m3_ocamera_position(camera, (m3_vec){ 3, 3, 0 });
 
   // m3_vec dir = { 1, 0, 0 };
   // m3_vec up = { 0, 0, 1 };
@@ -56,15 +57,15 @@ void setup() {
   m3_ocamera_pivot(camera, quat);
 }
 
-int t = 0;
+const int itts = 12000;
 
 void loop() {
   uint32_t start = millis();
 
-  m3_quat quat = { 0, 0, sin(t * 3.1415926 / 36) * 127, cos(t * 3.1415926 / 36) * 127 };
+  m3_quat quat = { 0, 0, 127 * sin(start * 3.14159 / itts), 127 * cos(start * 3.14159 / itts) };
+  // m3_quat quat = { 0, 0, 89, 89 };
   m3_quat_normalize(&quat);
   m3_ocamera_pivot(camera, quat);
-  t++;
 
   // Clear target
   memset(target, 0, sizeof(target));
@@ -83,9 +84,9 @@ void loop() {
   for (int y = height - 1; y >= 0; y--) {
     Serial.print("| ");
     for (int x = 0; x < width; x++) {
-        uint8_t row = target[(y*height + x) / 8];
+        uint8_t row = target[(y*width + x) / 8];
 
-        if (x == height / 2 && y == height / 2) {
+        if (x == width / 2 && y == height / 2) {
             Serial.print("::");
             continue;
         }
@@ -103,10 +104,10 @@ void loop() {
   }
   Serial.println("-+");
 
-  Serial.print("(");
+  // Serial.print("(");
   Serial.print(end - start);
   Serial.println("ms)");
 
-  // ~4fps
+  // ~2fps
   delay(500);
 }

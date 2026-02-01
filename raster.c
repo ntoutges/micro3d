@@ -77,7 +77,7 @@ void m3_raster_line(
 
 inline void _m3_raster_put_px(uint8_t* target, uint8_t width, uint8_t height, uint8_t x, uint8_t y) {
     // Calculate index given width/height
-    uint8_t index = (y*width + x) / 8;
+    uint16_t index = (y*width + x) / 8;
     uint8_t mask = 0b00000001 << (x % 8);
 
     // Update target at the specified index/bit
