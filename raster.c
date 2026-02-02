@@ -1,6 +1,7 @@
 #include "raster.h"
 
-void _m3_raster_put_px(uint8_t* target, uint8_t width, uint8_t height, uint8_t x, uint8_t y);
+void _m3_raster_put_hpx(uint8_t* target, uint8_t width, uint8_t height, uint8_t x, uint8_t y); // Place pixel in format `target[y][x/8]:(x%8)`
+void _m3_raster_put_vpx(uint8_t* target, uint8_t width, uint8_t height, uint8_t x, uint8_t y); // Place pixel in format `target[y/8][x]:(y%8)`
 bool _m3_raster_in_bounds(int16_t x, int16_t y, uint8_t width, uint8_t height);
 
 // Integer counter algorithm
@@ -20,7 +21,8 @@ void m3_raster_line(
     int16_t x0,
     int16_t y0,
     int16_t x1,
-    int16_t y1
+    int16_t y1,
+    uint8_t orientation
 ) {
     int8_t sx = x1 > x0 ? 1 : -1;
     int8_t sy = y1 > y0 ? 1 : -1;
@@ -33,10 +35,15 @@ void m3_raster_line(
     uint16_t cx = 0;
     uint16_t cy = 0;
 
+    // Determine `put_?px` method to use
+    void (*put_px)(uint8_t*, uint8_t, uint8_t, uint8_t, uint8_t) = (orientation & M3_ORIENTATION_VL)
+        ? _m3_raster_put_vpx
+        : _m3_raster_put_hpx;
+
     bool in_bounds = _m3_raster_in_bounds(x0, y0, width, height);
 
     // Set initial bit at x0,y0
-    if (in_bounds) _m3_raster_put_px(target, width, height, x0, y0);
+    if (in_bounds) put_px(target, width, height, x0, y0);
 
     // Note: Current position stored in x0,y0
     // Loop until end is reached
@@ -71,14 +78,23 @@ void m3_raster_line(
         }
 
         // Set bit at x0,y0
-        _m3_raster_put_px(target, width, height, x0, y0);
+        put_px(target, width, height, x0, y0);
     }
 }
 
-inline void _m3_raster_put_px(uint8_t* target, uint8_t width, uint8_t height, uint8_t x, uint8_t y) {
+inline void _m3_raster_put_hpx(uint8_t* target, uint8_t width, uint8_t height, uint8_t x, uint8_t y) {
     // Calculate index given width/height
     uint16_t index = (y*width + x) / 8;
     uint8_t mask = 0b00000001 << (x % 8);
+
+    // Update target at the specified index/bit
+    target[index] |= mask;
+}
+
+inline void _m3_raster_put_vpx(uint8_t* target, uint8_t width, uint8_t height, uint8_t x, uint8_t y) {
+    // Calculate index given width/height
+    uint16_t index = ((y / 8)*width + x);
+    uint8_t mask = 0b00000001 << (y % 8);
 
     // Update target at the specified index/bit
     target[index] |= mask;

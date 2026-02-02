@@ -40,7 +40,8 @@ m3_err_t m3_ocamera_render(
     m3_scene_handle_t scene,
     uint8_t* target,
     uint8_t width,
-    uint8_t height
+    uint8_t height,
+    uint8_t orientation
 ) {
     // Verify camera/scene existance
     if (!camera) return M3_ERR_EXIST_A;
@@ -124,23 +125,33 @@ m3_err_t m3_ocamera_render(
             // Only rasterize if bounding box of vector falls within camera
             if (!m3_raster_bb_isect(bbox, camera_bb)) continue;
 
-            // printf("%d: (%d, %d):(%d,%d)\n",
-            //     j, 
-            //     (int16_t) roundf(prev.live.x * x_scale) + screen_offset_x,
-            //     (int16_t) roundf(prev.live.y * y_scale) + screen_offset_y,
-            //     (int16_t) roundf(pos.live.x * x_scale) + screen_offset_x,
-            //     (int16_t) roundf(pos.live.y * y_scale) + screen_offset_y
-            // );
+            int16_t x0 = (int16_t) roundf(prev.live.x * x_scale);
+            int16_t y0 = (int16_t) roundf(prev.live.y * y_scale) + screen_offset_y;
+            int16_t x1 = (int16_t) roundf(pos.live.x * x_scale) + screen_offset_x;
+            int16_t y1 = (int16_t) roundf(pos.live.y * y_scale) + screen_offset_y;
+
+            // Mirror x0/x1 about the y-axis
+            if (orientation & M3_ORIENTATION_HFLIP) {
+                x0 = -x0;
+                x1 = -x1;
+            }
+
+            // Mirror y0/y1 about the x-axis
+            if (orientation & M3_ORIENTATION_HFLIP) {
+                y0 = -y0;
+                y1 = -y1;
+            }
 
             // Transform desired coordinates to screenspace
             m3_raster_line(
                 target,
                 width,
                 height, 
-                (int16_t) roundf(prev.live.x * x_scale) + screen_offset_x,
-                (int16_t) roundf(prev.live.y * y_scale) + screen_offset_y,
-                (int16_t) roundf(pos.live.x * x_scale) + screen_offset_x,
-                (int16_t) roundf(pos.live.y * y_scale) + screen_offset_y
+                x0 + screen_offset_x,
+                y0 + screen_offset_y,
+                x1 + screen_offset_x,
+                y1 + screen_offset_y,
+                orientation
             );
         }
     }

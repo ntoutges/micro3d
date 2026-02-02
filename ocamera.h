@@ -84,8 +84,16 @@ m3_err_t m3_ocamera_resize(m3_ocamera_handle_t camera, uint8_t width, uint8_t he
 
 /**
  * Render a scene to some target
- * @param camera    The handle of the camera to modify
- * @param quat      The quaternion determining the new orientation
+ * @param camera    The handle of the camera to render using
+ * @param scene     The handle of the scene to render
+ * @param target    The target buffer to render into
+ * @param width     The width of the target buffer to render into, in bits
+ * @param height    The height of the target buffer to render into, in bits
+ * @param orientation   The orientation mode to render the buffer. Union multiple compatible options for combinations
+ * M3_ORIENTATION_HL: Target format is inferred to be `target[y][x/8]:x%8`
+ * M3_ORIENTATION_VL: Target format is inferred to be `target[y/8][x]:y%8` (ex: SSD1306 format)
+ * M3_ORIENTATION_HFLIP: Render image flipped about the y-axis
+ * M3_ORIENTATION_VFLIP: Render image flipped about the x-axis
  * @returns         Whether the operation was successful
  * On failure, the original camera is unmodified
  * M3_SUCCESS: Success
@@ -97,7 +105,8 @@ m3_err_t m3_ocamera_render(
     m3_scene_handle_t scene,
     uint8_t* target,
     uint8_t width,
-    uint8_t height
+    uint8_t height,
+    uint8_t orientation
 );
 
 #ifdef __cplusplus

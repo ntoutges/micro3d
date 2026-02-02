@@ -67,14 +67,14 @@ int main() {
         // m3_ocamera_pivot(camera, quat);
 
         // Render 
-        m3_ocamera_render(camera, scene, target, width, height);
+        m3_ocamera_render(camera, scene, target, width, height, M3_ORIENTATION_VL);
 
         // Print out rasterized image
         printf("\n");
         for (int y = height - 1; y >= 0; y--) {
             printf("| ");
             for (int x = 0; x < width; x++) {
-                uint16_t index = (y*width + x) / 8;
+                uint16_t index = ((y / 8)*width + x);
                 uint8_t row = target[index];
 
                 if (x == width / 2 && y == height / 2) {
@@ -82,7 +82,7 @@ int main() {
                     continue;
                 }
                 
-                if (row & (0x01 << (x % 8)))
+                if (row & (0x01 << (y % 8)))
                     printf("[]");
                 else printf("  ");
             }

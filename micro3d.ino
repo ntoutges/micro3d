@@ -84,7 +84,7 @@ void loop() {
   // Clear target
   memset(target, 0, sizeof(target));
   
-  m3_ocamera_render(camera, scene, target, width, height);
+  m3_ocamera_render(camera, scene, target, width, height, M3_ORIENTATION_VL);
 
   uint32_t end = millis();
 
