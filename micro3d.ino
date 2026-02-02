@@ -1,16 +1,25 @@
 #include "micro3d.h"
+#include <Adafruit_QMC5883P.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
+#define SCREEN_WIDTH 128 // OLED display width, in pixels
+#define SCREEN_HEIGHT 64 // OLED display height, in pixels
+
+// Declaration for SSD1306 display connected using software SPI (default case):
+#define OLED_MOSI   9
+#define OLED_CLK   10
+#define OLED_DC    11
+#define OLED_CS    12
+#define OLED_RESET 13
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT,
+  OLED_MOSI, OLED_CLK, OLED_DC, OLED_RESET, OLED_CS);
 
 m3_scene_handle_t scene;
 m3_ocamera_handle_t camera;
+m3_object_handle_t arrow;
 
-m3_object_handle_t box;
-m3_object_handle_t tri;
-
-// Allocate space for camera to render to
-const int width = 32;
-const int height = 16;
-
-uint8_t target[width * height / 8];
+Adafruit_QMC5883P mag;
 
 void setup() {
   Serial.begin(115200);
@@ -20,108 +29,95 @@ void setup() {
 
   // Populate scene with a 1x1 box
   // Create base segments
-  m3_segment_handle_t vertical = m3_segment_create(scene);
-  m3_segment_handle_t horizontal = m3_segment_create(scene);
-  m3_segment_handle_t rts = m3_segment_create(scene);
+  m3_segment_handle_t body = m3_segment_create(scene);
+  m3_segment_handle_t arrow_l  = m3_segment_create(scene);
+  m3_segment_handle_t arrow_r = m3_segment_create(scene);
+  m3_segment_handle_t arrow_b = m3_segment_create(scene);
 
   // Populate base segments
-  m3_segment_offset(vertical, (m3_vec) { 0, 7, 0 });
-  m3_segment_offset(horizontal, (m3_vec) { 7, 0, 0 });
-  m3_segment_offset(rts, (m3_vec) { -7, -7, 0 });
-  // m3_segment_visible(rts, false);
+  m3_segment_offset(body, (m3_vec) { 7, 0, 0 });
+  m3_segment_offset(arrow_l, (m3_vec) { -3, 2, 0 });
+  m3_segment_offset(arrow_r, (m3_vec) { 3, 2, 0 });
+  m3_segment_offset(arrow_b, (m3_vec) { 0, -4, 0 });
+  m3_segment_visible(arrow_b, false);
 
   // Create objects to use segments
-  box = m3_object_create(scene);
-  tri = m3_object_create(scene);
-  m3_object_position(box, (m3_vec) { 0, 0, 0 });
-  m3_object_position(tri, (m3_vec) { 0, 0, 0 });
+  arrow = m3_object_create(scene);
+  m3_object_position(arrow, (m3_vec) { 0, 0, 0 });
 
-  // Fill objects with segments
-  m3_object_push_segment(box, vertical);   // |
-  m3_object_push_segment(box, horizontal); // |^
-  m3_object_push_segment(box, rts);        // |^
-  m3_object_push_segment(box, horizontal); // |#
-  m3_object_push_segment(box, vertical);   // |#|
-
-  m3_object_push_segment(tri, vertical);   // |#|
-  m3_object_push_segment(tri, horizontal);   // |#|
-  m3_object_push_segment(tri, rts);   // |#|
-
+  // Fill arrow with segments
+  m3_object_push_segment(arrow, body);
+  m3_object_push_segment(arrow, body);
+  m3_object_push_segment(arrow, arrow_l);
+  m3_object_push_segment(arrow, arrow_b);
+  m3_object_push_segment(arrow, arrow_r);
 
   // Create camera
   camera = m3_ocamera_create();
   m3_ocamera_resize(camera, 32, 16);
-  m3_ocamera_position(camera, (m3_vec){ 3, 3, 0 });
-
-  // m3_vec dir = { 1, 0, 0 };
-  // m3_vec up = { 0, 0, 1 };
-
-  // m3_vec_normalize(&dir);
-  // m3_vec_normalize(&up);
-  // m3_quat quat = m3_vec_to_quat(dir, up);
+  m3_ocamera_position(camera, (m3_vec){ 7, 0, 0 });
 
   m3_quat quat = { 0, 0, 0, 1 };
   m3_quat_normalize(&quat);
   m3_ocamera_pivot(camera, quat);
+
+  // Prepare output display
+  if(!display.begin(SSD1306_SWITCHCAPVCC)) {
+    Serial.println(F("SSD1306 allocation failed"));
+    while (1);
+  }
+
+  display.clearDisplay();
+  display.display();
+  
+  // Monitor the real world
+  while (!mag.begin()) {
+    Serial.println("Failed to find QMC5883L chip!");
+    delay(1000);
+  }
+  Serial.println("Found QMC5883L!");
+
+  mag.setMode(QMC5883P_MODE_NORMAL);
+  mag.setODR(QMC5883P_ODR_50HZ);
+  mag.setOSR(QMC5883P_OSR_4);
+  mag.setDSR(QMC5883P_DSR_2);
+  mag.setRange(QMC5883P_RANGE_2G);
+  mag.setSetResetMode(QMC5883P_SETRESET_ON);
 }
 
-const int itts = 12000;
-bool toggle = false;
+float min_x = 0.21;
+float min_y = -0.78;
+float max_x = 0.79;
+float max_y = -0.21;
 
 void loop() {
+
+  // Get x/y rotation 
+  float x, y, z;
+  delay(2);
+  if (!mag.getGaussField(&x, &y, &z)) return;
+  float cx = (x - min_x) / (max_x - min_x) * 2 - 1;
+  float cy = (y - min_y) / (max_y - min_y) * 2 - 1;
+
+  float mag = sqrt(cx*cx + cy*cy);
+  float ucx = cx / mag;
+  float ucy = cy / mag;
+
   uint32_t start = millis();
 
-  m3_quat quat = { 0, 0, 127 * sin(start * 3.14159 / itts), 127 * cos(start * 3.14159 / itts) };
-  // m3_quat quat = { 0, 0, 89, 89 };
+  // Create vector from cx/cy
+  // m3_vec rotation = { ucx * 127, 0, ucy * 127 };
+  // m3_vec up = { 0, 0, 127 };
+
+  // m3_quat quat = m3_vec_to_quat(rotation, up);
+  m3_quat quat = { 0, ucx * 127, 0, ucy * 127 };
   m3_quat_normalize(&quat);
+
   m3_ocamera_pivot(camera, quat);
 
-  // Alternately hide/show tri vs. box
-  toggle = !toggle;
-  m3_object_visible(box, toggle);
-  m3_object_visible(tri, !toggle);
+  display.clearDisplay();  
+  m3_ocamera_render(camera, scene, display.getBuffer(), SCREEN_WIDTH, SCREEN_HEIGHT, M3_ORIENTATION_VL | M3_ORIENTATION_HFLIP);
+  display.display();
 
-  // Clear target
-  memset(target, 0, sizeof(target));
-  
-  m3_ocamera_render(camera, scene, target, width, height, M3_ORIENTATION_VL);
-
-  uint32_t end = millis();
-
-  // Print out rasterized image
-  Serial.print("+-");
-  for (int x = 0; x < width; x++) {
-    Serial.print("--");
-  }
-  Serial.println("-+");
-
-  for (int y = height - 1; y >= 0; y--) {
-    Serial.print("| ");
-    for (int x = 0; x < width; x++) {
-        uint8_t row = target[(y*width + x) / 8];
-
-        if (x == width / 2 && y == height / 2) {
-            Serial.print("::");
-            continue;
-        }
-        
-        if (row & (0x01 << x % 8))
-            Serial.print("||");
-        else Serial.print("  ");
-    }
-    Serial.println(" |");
-  }
-  // Print out rasterized image
-  Serial.print("+-");
-  for (int x = 0; x < width; x++) {
-    Serial.print("--");
-  }
-  Serial.println("-+");
-
-  // Serial.print("(");
-  Serial.print(end - start);
-  Serial.println("ms)");
-
-  // ~2fps
-  delay(500);
+  delay(100);
 }

@@ -126,9 +126,9 @@ m3_err_t m3_ocamera_render(
             if (!m3_raster_bb_isect(bbox, camera_bb)) continue;
 
             int16_t x0 = (int16_t) roundf(prev.live.x * x_scale);
-            int16_t y0 = (int16_t) roundf(prev.live.y * y_scale) + screen_offset_y;
-            int16_t x1 = (int16_t) roundf(pos.live.x * x_scale) + screen_offset_x;
-            int16_t y1 = (int16_t) roundf(pos.live.y * y_scale) + screen_offset_y;
+            int16_t y0 = (int16_t) roundf(prev.live.y * y_scale);
+            int16_t x1 = (int16_t) roundf(pos.live.x * x_scale);
+            int16_t y1 = (int16_t) roundf(pos.live.y * y_scale);
 
             // Mirror x0/x1 about the y-axis
             if (orientation & M3_ORIENTATION_HFLIP) {
@@ -137,7 +137,7 @@ m3_err_t m3_ocamera_render(
             }
 
             // Mirror y0/y1 about the x-axis
-            if (orientation & M3_ORIENTATION_HFLIP) {
+            if (orientation & M3_ORIENTATION_VFLIP) {
                 y0 = -y0;
                 y1 = -y1;
             }

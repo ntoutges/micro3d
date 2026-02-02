@@ -103,9 +103,9 @@ typedef enum m3_err_t {
 } m3_err_t;
 
 // Camera orientations
-#define M3_ORIENTATION_HL 0b00      // Standard bit ordering (bits indexed by x % 8)
-#define M3_ORIENTATION_VL 0b01      // Bits indexed by y % 8
-#define M3_ORIENTATION_HFLIP 0b001  // Reverse order of bits along the x-axis
-#define M3_ORIENTATION_VFLIP 0b0001 // Reverse order of bits along the y-axis
+#define M3_ORIENTATION_HL    0b0000 // Standard bit ordering (bits indexed by x % 8)
+#define M3_ORIENTATION_VL    0b0001 // Bits indexed by y % 8
+#define M3_ORIENTATION_HFLIP 0b0010 // Reverse order of bits along the x-axis
+#define M3_ORIENTATION_VFLIP 0b0100 // Reverse order of bits along the y-axis
 
 #endif
