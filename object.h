@@ -125,30 +125,6 @@ m3_err_t m3_object_remove_segment(
  */
 m3_err_t m3_object_clear(m3_object_handle_t object);
 
-/**
- * Set the parent of an object for hierarchy creation
- * @param object    The handle of the object to clear
- * @param parent    The handle of the object to set as the parent.
- * If object and parent are the same object, the parent is reset
- * @returns         Whether the operation was successful
- * On failure, the original object/segment are unmodified
- * M3_SUCCESS: Success
- * M3_ERR_EXIST_A: The object does not exist
- * M3_ERR_EXIST_B: The parent does not exist within `object`'s scene
- * M3_ERR_CIRCULAR: The created hierarchy contains a circular reference
- */
-m3_err_t m3_object_pset(m3_object_handle_t object, m3_object_handle_t parent);
-
-/**
- * Clear the parent of an object to reset the hierarchy
- * @param object    The handle of the object to clear
- * @returns         Whether the operation was successful
- * On failure, the original object/segment are unmodified
- * M3_SUCCESS: Success
- * M3_ERR_EXIST_A: The object does not exist
- */
-m3_err_t m3_object_pclear(m3_object_handle_t object);
-
 // -------- OBJECT SEGMENT TRAVERSAL --------
 
 /**
@@ -176,6 +152,30 @@ uint8_t* m3_object_segment_buf(m3_object_handle_t object);
 m3_segment_handle_t m3_object_segment_get(m3_object_handle_t object, uint8_t index);
 
 // -------- OBJECT MODIFICATION --------
+
+/**
+ * Set the parent of an object for hierarchy creation
+ * @param object    The handle of the object to clear
+ * @param parent    The handle of the object to set as the parent.
+ * If object and parent are the same object, the parent is reset
+ * @returns         Whether the operation was successful
+ * On failure, the original object/segment are unmodified
+ * M3_SUCCESS: Success
+ * M3_ERR_EXIST_A: The object does not exist
+ * M3_ERR_EXIST_B: The parent does not exist within `object`'s scene
+ * M3_ERR_CIRCULAR: The created hierarchy contains a circular reference
+ */
+m3_err_t m3_object_pset(m3_object_handle_t object, m3_object_handle_t parent);
+
+/**
+ * Clear the parent of an object to reset the hierarchy
+ * @param object    The handle of the object to clear
+ * @returns         Whether the operation was successful
+ * On failure, the original object/segment are unmodified
+ * M3_SUCCESS: Success
+ * M3_ERR_EXIST_A: The object does not exist
+ */
+m3_err_t m3_object_pclear(m3_object_handle_t object);
 
 /**
  * Set the position of an object in 3d space.
@@ -210,6 +210,21 @@ m3_err_t m3_object_pivot(m3_object_handle_t object, m3_quat quat);
  * M3_ERR_EXIST_A: The object does not exist
  */
 m3_err_t m3_object_visible(m3_object_handle_t object, bool visible);
+
+/**
+ * Set the axes in which this object is locked
+ * Determines whether the camera's rotation in some axis factors into the rendering of the object.
+ * @param object    The handle of the object to modify
+ * @param rlock     The axes to lock rotation off of. Union multiple together for complex rotation locking
+ * @returns         Whether the operation was successful
+ * On failure, the original object is unmodified
+ * M3_SUCCESS: Success
+ * M3_ERR_EXIST_A: The segment does not exist
+ */
+m3_err_t m3_object_rlock(
+    m3_object_handle_t object,
+    uint8_t rlock
+);
 
 // -------- OBJECT GETTERS --------
 

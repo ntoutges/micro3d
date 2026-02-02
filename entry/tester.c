@@ -6,91 +6,190 @@
 #include <unistd.h>
 
 int main() {
-    // Create a test scene
+    // --- Populate scene with a 3d arrow ---
+
+    // Create the main scene
     m3_scene_handle_t scene = m3_scene_create_d(128, 16);
-
-    // Populate scene with a 1x1 box
-    
-    // Create base segments
-    m3_segment_handle_t vertical = m3_segment_create(scene);
-    m3_segment_handle_t horizontal = m3_segment_create(scene);
-    m3_segment_handle_t rts = m3_segment_create(scene);
-
-    // Populate base segments
-    m3_segment_offset(vertical, (m3_vec) { 0, 7, 0 });
-    m3_segment_offset(horizontal, (m3_vec) { 7, 0, 0 });
-    m3_segment_offset(rts, (m3_vec) { -7, -7, 0 });
-    // m3_segment_visible(rts, false);
-
-    // Create object to use segments
-    m3_object_handle_t box = m3_object_create(scene);
-    m3_object_position(box, (m3_vec) { 0, 0, 0 });
-
-    // Fill object with segments
-    m3_object_push_segment(box, vertical);   // |
-    m3_object_push_segment(box, horizontal); // |^
-    m3_object_push_segment(box, rts);        // |^
-    m3_object_push_segment(box, horizontal); // |#
-    m3_object_push_segment(box, vertical);   // |#|
 
     // Create camera
     m3_ocamera_handle_t camera = m3_ocamera_create();
-    m3_ocamera_resize(camera, 32, 16);
+    m3_ocamera_resize(camera, 16, 8);
     m3_ocamera_position(camera, (m3_vec){ 0, 0, 0 });
 
-    m3_vec dir = { 1, 1, 1 };
-    m3_vec up = { -1, -1, 1 };
+    m3_quat cquat = { 38, 0, 0, 90 };
+    // m3_quat cquat = { 5, 0, 0, 5 };
+    m3_quat_normalize(&cquat);
+    m3_ocamera_pivot(camera, cquat);
 
-    m3_vec_normalize(&dir);
-    m3_vec_normalize(&up);
-    m3_quat quat = m3_vec_to_quat(dir, up);
+    // Create required objects
+    m3_object_handle_t arrow = m3_object_create(scene);
+    m3_object_handle_t fletching = m3_object_create(scene);
+    m3_object_handle_t point = m3_object_create(scene);
 
-    printf("(%f, %f, %f, %f)\n", quat.x / 127.0, quat.y / 127.0, quat.z / 127.0, quat.w / 127.0);
+    // Setup object hierarchy
+    m3_object_pset(fletching, arrow);
+    m3_object_pset(point, arrow);
 
-    // m3_quat quat = { 0, 0, 0, 1 };
-    // m3_quat_normalize(&quat);
-    m3_ocamera_pivot(camera, quat);
+    // Setup object data
+    m3_object_position(fletching, (m3_vec){ -4, 0, 0 });
+    m3_object_position(point, (m3_vec){ 3, 0, 0 });
+    m3_object_rlock(point, M3_RLOCK_X);
+
+    // -- Create segments --
+    // Fletching
+    m3_segment_handle_t af0 = m3_segment_create(scene);
+    m3_segment_handle_t af1 = m3_segment_create(scene);
+    m3_segment_handle_t af2 = m3_segment_create(scene);
+    m3_segment_handle_t af3 = m3_segment_create(scene);
+
+    // Body
+    m3_segment_handle_t ab0 = m3_segment_create(scene);
+    m3_segment_handle_t abp = m3_segment_create(scene);
+
+    // Ring
+    m3_segment_handle_t ar0 = m3_segment_create(scene);
+    m3_segment_handle_t ar1 = m3_segment_create(scene);
+    m3_segment_handle_t ar2 = m3_segment_create(scene);
+    m3_segment_handle_t ar3 = m3_segment_create(scene);
+    m3_segment_handle_t ar4 = m3_segment_create(scene);
+    m3_segment_handle_t ar5 = m3_segment_create(scene);
+    m3_segment_handle_t ar6 = m3_segment_create(scene);
+    m3_segment_handle_t ar7 = m3_segment_create(scene);
+    m3_segment_handle_t arp = m3_segment_create(scene);
+
+    // Point
+    m3_segment_handle_t ap0 = m3_segment_create(scene);
+    m3_segment_handle_t ap1 = m3_segment_create(scene);
+    m3_segment_handle_t app = m3_segment_create(scene);
+
+    // Origin
+    m3_segment_handle_t aorigin = m3_segment_create(scene);
+
+    // -- Populate segments --
+    // Fletching
+    m3_segment_offset(af0, (m3_vec){ -1, 1, 1 });
+    m3_segment_offset(af1, (m3_vec){ -1, 1, -1 });
+    m3_segment_offset(af2, (m3_vec){ -1, -1, 1 });
+    m3_segment_offset(af3, (m3_vec){ -1, -1, -1 });
+
+    // Body
+    m3_segment_offset(ab0, (m3_vec){ 7, 0, 0 });
+    m3_segment_offset(abp, (m3_vec){ -4, 0, 0 });
+    m3_segment_visible(abp, false);
+    
+    // Ring
+    m3_segment_offset(ar0, (m3_vec){ 0, 1, 1 });
+    m3_segment_offset(ar1, (m3_vec){ 0, 0, 2 });
+    m3_segment_offset(ar2, (m3_vec){ 0, -1, 1 });
+    m3_segment_offset(ar3, (m3_vec){ 0, -2, 0 });
+    m3_segment_offset(ar4, (m3_vec){ 0, -1, -1 });
+    m3_segment_offset(ar5, (m3_vec){ 0, 0, -2 });
+    m3_segment_offset(ar6, (m3_vec){ 0, 1, -1 });
+    m3_segment_offset(ar7, (m3_vec){ 0, 2, 0 });
+    m3_segment_offset(arp, (m3_vec){ 0, 1, -2 });
+    m3_segment_visible(arp, false);
+
+    // Point
+    m3_segment_offset(ap0, (m3_vec){ -3, 2, 0 });
+    m3_segment_offset(ap1, (m3_vec){ -3, -2, 0 });
+    m3_segment_offset(app, (m3_vec){ 3, 0, 0 });
+    m3_segment_absolute(app, true);
+    m3_segment_visible(app, false);
+
+    // Origin
+    m3_segment_offset(aorigin, (m3_vec){ 0, 0, 0 });
+    m3_segment_absolute(aorigin, true);
+    m3_segment_visible(aorigin, false);
+
+    // -- Fill objects with segments --
+    // Setup base arrow
+    m3_object_push_segment(arrow, abp);
+    m3_object_push_segment(arrow, ab0);
+    m3_object_push_segment(arrow, arp);
+    m3_object_push_segment(arrow, ar0);
+    m3_object_push_segment(arrow, ar1);
+    m3_object_push_segment(arrow, ar2);
+    m3_object_push_segment(arrow, ar3);
+    m3_object_push_segment(arrow, ar4);
+    m3_object_push_segment(arrow, ar5);
+    m3_object_push_segment(arrow, ar6);
+    m3_object_push_segment(arrow, ar7);
+
+    // Setup hideable fletching
+    m3_object_push_segment(fletching, af0);
+    m3_object_push_segment(fletching, aorigin);
+    m3_object_push_segment(fletching, af1);
+    m3_object_push_segment(fletching, aorigin);
+    m3_object_push_segment(fletching, af2);
+    m3_object_push_segment(fletching, aorigin);
+    m3_object_push_segment(fletching, af3);
+
+    // Setup hideable point
+    m3_object_push_segment(point, app);
+    m3_object_push_segment(point, ap0);
+    m3_object_push_segment(point, app);
+    m3_object_push_segment(point, ap1);
+
+    // -- RENDER --
 
     // Allocate space for camera to render to
-    const int width = 32;
-    const int height = 16;
+    const int width = 128;
+    const int height = 64;
 
     uint8_t target[width * height / 8];
 
-    // const int itts = 12;
-    // for (int i = 0; i <= itts; i++) {
+    const int itts = 24;
+    while (1) {
+        for (int i = 0; i <= itts; i++) {
 
-        // Clear frame
-        memset(target, 0, sizeof(target));
+            // Clear frame
+            memset(target, 0, sizeof(target));
 
-        // m3_quat quat = { 127 * sin(i * 3.14159 / itts), 0, 0, 127 * cos(i * 3.14159 / itts) };
-        // m3_ocamera_pivot(camera, quat);
+            // Rotate arrow by some amount
+            m3_quat quat = { 0, 127 * sin(i * 3.14159 / itts), 0, 127 * cos(i * 3.14159 / itts) };
+            // m3_quat quat = { 0, 0, 0, 1 };
+            m3_quat_normalize(&quat);
+            m3_object_pivot(arrow, quat);
 
-        // Render 
-        m3_ocamera_render(camera, scene, target, width, height, M3_ORIENTATION_VL);
+            // printf("(%d, %d, %d, %d)\n", quat.x, quat.y, quat.z, quat.w);
 
-        // Print out rasterized image
-        printf("\n");
-        for (int y = height - 1; y >= 0; y--) {
-            printf("| ");
-            for (int x = 0; x < width; x++) {
-                uint16_t index = ((y / 8)*width + x);
-                uint8_t row = target[index];
+            // -- Run "backface culling" --
+            m3_vec pivot_helper = { 127, 0, 0 };
+            m3_vec_rotate(&pivot_helper, quat);
 
-                if (x == width / 2 && y == height / 2) {
-                    printf("::");
-                    continue;
+            m3_object_visible(point, abs(pivot_helper.z) < 100); // Hide point once occluded
+            m3_object_visible(fletching, pivot_helper.z >= 0); // Hide point once occluded
+            
+
+            // -- Render --
+            m3_ocamera_render(camera, scene, target, width, height, M3_ORIENTATION_HL);
+
+            // Print out rasterized image
+            printf("\n");
+            for (int y = height - 1; y >= 0; y--) {
+                printf("| ");
+                for (int x = 0; x < width; x++) {
+                    uint16_t index = (y*width + x) / 8;
+                    uint8_t row = target[index];
+
+                    if (x == width / 2 && y == height / 2) {
+                    if (row & (0x01 << (x % 8)))
+                        printf("!!");
+                    else printf("::");
+                        continue;
+                    }
+                    
+                    if (row & (0x01 << (x % 8)))
+                        printf("[]");
+                    else printf(". ");
                 }
-                
-                if (row & (0x01 << (y % 8)))
-                    printf("[]");
-                else printf("  ");
+                printf(" |\n");
             }
-            printf(" |\n");
-        }
-        printf("\n");
+            printf("\n");
 
-    //     if (i != itts) usleep(500000);
-    // }
+            if (i != itts) usleep(4000000 / (itts + 1));
+        }
+    }
+
     return 0;
 }

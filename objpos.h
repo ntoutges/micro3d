@@ -51,6 +51,19 @@ m3_pos_chain m3_pos_segment_get(m3_pos_object root, uint8_t segment);
  */
 m3_pos_chain m3_pos_segment_next(m3_pos_object root, uint8_t segment, m3_vec prev);
 
+
+/**
+ * Update a root to undo some given position/rotation transformation
+ * This first reverses the rotation, then the position
+ * Useful for transforming objects from global space to positions relative to a camera
+ * Respects `rlock` property of the handle object
+ * @param root  The object to modify
+ * @param pos   The position portion of the transformation
+ * @param quat  The rotation portion of the transformation. Must be normalized
+ * @param object    The object whose rlock property will be used
+ */
+void m3_pos_root_reverse_rlock(m3_pos_object* root, m3_vec pos, m3_quat quat, m3_object_handle_t object);
+
 /**
  * Update a root to undo some given position/rotation transformation
  * This first reverses the rotation, then the position

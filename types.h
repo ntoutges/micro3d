@@ -61,7 +61,8 @@ typedef struct m3_object_t {
     uint8_t visible: 1; // Marks whether this object is visilbe (1) or hidden.
                         // If hidden: all segments and child objects will be hidden
     
-    uint8_t unused: 2;
+    uint8_t lx: 1;      // Lock child segment rotation in the x-axis; Note that this does _not_ affect child objects
+    uint8_t ly: 1;      // Lock child segment rotation in the y-axis; Note that this does _not_ affect child objects
 
     uint8_t soffset; // Offset from capacity, where `size = 2**scap - soffset`
 
@@ -110,5 +111,9 @@ typedef enum m3_err_t {
 #define M3_ORIENTATION_VL    0b0001 // Bits indexed by y % 8
 #define M3_ORIENTATION_HFLIP 0b0010 // Reverse order of bits along the x-axis
 #define M3_ORIENTATION_VFLIP 0b0100 // Reverse order of bits along the y-axis
+
+#define M3_RLOCK_NONE 0b000 // All rotation allowed
+#define M3_RLOCK_X    0b001 // Ignore rotation about the x-axis
+#define M3_RLOCK_Y    0b010 // Ignore rotation about the y-axis
 
 #endif

@@ -105,14 +105,23 @@ void m3_vec_rotate(m3_vec* vec, m3_quat quat) {
     vec->z = roundf(2 * (xz - yw)     * base.x + 2 * (yz - xw)     * base.y + (1 - 2*x2 - 2*y2) * base.z);
 }
 
+void m3_quat_rotate_by(m3_quat dest, m3_quat* src) {
+    m3_quat_rotate(&dest, *src);
+
+    src->x = dest.x;
+    src->y = dest.y;
+    src->z = dest.z;
+    src->w = dest.w;
+}
+
 void m3_quat_rotate(m3_quat* dest, m3_quat src) {
     m3_quat left = { dest->x, dest->y, dest->z, dest->w }; // Store copy of dest
 
     // Perform quaternion composition
-    dest->x = roundf((left.w * src.x + left.x * src.w + left.y * src.z - left.z * src.y) / 127.0);
-    dest->y = roundf((left.w * src.y - left.x * src.z + left.y * src.w + left.z * src.x) / 127.0);
-    dest->z = roundf((left.w * src.z + left.x * src.y - left.y * src.x + left.z * src.w) / 127.0);
-    dest->w = roundf((left.w * src.w - left.x * src.x - left.y * src.y - left.z - src.z) / 127.0);
+    dest->x = roundf(((int16_t) left.w * src.x + (int16_t) left.x * src.w + (int16_t) left.y * src.z - (int16_t) left.z * src.y) / 127.0);
+    dest->y = roundf(((int16_t) left.w * src.y - (int16_t) left.x * src.z + (int16_t) left.y * src.w + (int16_t) left.z * src.x) / 127.0);
+    dest->z = roundf(((int16_t) left.w * src.z + (int16_t) left.x * src.y - (int16_t) left.y * src.x + (int16_t) left.z * src.w) / 127.0);
+    dest->w = roundf(((int16_t) left.w * src.w - (int16_t) left.x * src.x - (int16_t) left.y * src.y - (int16_t) left.z * src.z) / 127.0);
 }
 
 inline m3_quat m3_quat_conj(m3_quat src) {

@@ -65,10 +65,19 @@ void m3_vec_rotate(m3_vec* vec, m3_quat quat);
 
 /**
  * Rotate the `dest` quaternion by the `src` quaternion
+ * dest = (dest * src)
  * @param dest The quaternion to store the result in.
  * @param src The quaternion to add from. Note that this quat _must_ be a normalized
  */
 void m3_quat_rotate(m3_quat* dest, m3_quat src);
+
+/**
+ * Rotate the `src` quaternion by the `dest` quaternion
+ * src = (dest * src)
+ * @param dest The quaternion to store the result in.
+ * @param src The quaternion to add from. Note that this quat _must_ be a normalized
+ */
+void m3_quat_rotate_by(m3_quat dest, m3_quat* src);
 
 /**
  * Returns the conjugate of some quaternion.

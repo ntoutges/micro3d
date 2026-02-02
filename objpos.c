@@ -18,7 +18,7 @@ m3_pos_object m3_pos_object_get(m3_object_handle_t object) {
         head_obj = &object.owner->obj_buf[head_id];
 
         // Apply parent quat + vec rotation
-        m3_quat_rotate(&pos.rot, head_obj->quat);
+        m3_quat_rotate_by(head_obj->quat, &pos.rot);
         m3_vec_rotate(&pos.loc, head_obj->quat);
 
         // Add parent pos to base vec
@@ -61,21 +61,55 @@ m3_pos_chain m3_pos_segment_next(m3_pos_object root, uint8_t segment, m3_vec pre
     };
 }
 
-void m3_pos_root_reverse(m3_pos_object* root, m3_vec pos, m3_quat quat) {
+void m3_pos_root_reverse_rlock(m3_pos_object* root, m3_vec pos, m3_quat quat, m3_object_handle_t object) {
     if (root->owner == NULL) return; // Invalid root object
 
     // Find the inverse of the given quat
     // Only need the conjugate, as `quat` is garunteed normalized
     m3_quat inv_quat = m3_quat_conj(quat);
-    
-    // Unrotate root position by `quat`
-    m3_quat_rotate(&(root->rot), inv_quat);
-
-    // Calculate rotation offset
-    m3_vec offset;
-    m3_vec_sub(&offset, pos);
 
     // Untranslate root position by `pos`
     m3_vec_sub(&(root->loc), pos);
     m3_vec_rotate(&(root->loc), inv_quat);
+    
+    // Only check 'rlock' if the given object exists
+    if (object.owner != NULL) {
+
+        // Get the raw object instance
+        m3_object_t* obj = &object.owner->obj_buf[object.id];
+
+        bool updated = false;
+
+        // Untwist about the x-axis
+        if (obj->lx) {
+            m3_quat twist = { inv_quat.x, 0, 0, inv_quat.w };
+            m3_quat_normalize(&twist);
+            m3_quat inv_twist = m3_quat_conj(twist);
+
+            m3_quat_rotate_by(inv_twist, &inv_quat);
+            updated = true;
+        }
+
+        // Untwist about the y-axis
+        if (obj->ly) {
+            m3_quat twist = { 0, inv_quat.y, 0, inv_quat.w };
+            m3_quat_normalize(&twist);
+            m3_quat inv_twist = m3_quat_conj(twist);
+
+            m3_quat_rotate_by(inv_twist, &inv_quat);
+            updated = true;
+        }
+
+        // Account for numerical imprecision
+        if (updated) {
+            m3_quat_normalize(&inv_quat);
+        }
+    }
+
+    // Unrotate root position by `quat`
+    m3_quat_rotate_by(inv_quat, &(root->rot));
+}
+
+void m3_pos_root_reverse(m3_pos_object* root, m3_vec pos, m3_quat quat) {
+    m3_pos_root_reverse_rlock(root, pos, quat, (m3_object_handle_t){ NULL, 0 });
 }

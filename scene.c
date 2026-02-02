@@ -9,7 +9,7 @@ m3_scene_handle_t m3_scene_create_d(
     if (seg_buf == NULL) return NULL;
 
     // Attempt to allocate space for object vmem
-    m3_object_t* obj_buf = (m3_object_t*) malloc(((int) seg_size) * sizeof(m3_object_t));
+    m3_object_t* obj_buf = (m3_object_t*) malloc(((int) obj_size) * sizeof(m3_object_t));
     if (obj_buf == NULL) {
         free(seg_buf);
         return NULL;

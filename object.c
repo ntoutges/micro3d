@@ -33,6 +33,10 @@ m3_object_handle_t m3_object_create(m3_scene_handle_t scene) {
     // By default: Mark object as visible
     object->visible = 1;
 
+    // By default: no axes locked
+    object->lx = 0;
+    object->ly = 0;
+
     // Initialize arraylist holding segments
     object->scap = 0b1111; // Special case -> capacity = 0
     object->soffset = 0; // 0 - 0 = size
@@ -200,7 +204,7 @@ bool _m3_object_update_segments(m3_object_t* object, uint16_t size) {
     if (new_cap != curr_cap) {
 
         // Attempt to allocate space for the larger/smaller segment list
-        uint8_t* segments = (uint8_t*) realloc(object->segments, new_cap * sizeof(uint8_t*));
+        uint8_t* segments = (uint8_t*) realloc(object->segments, new_cap * sizeof(uint8_t));
         if (segments == NULL) return false;
 
         // Update pointer to new memory region
@@ -376,6 +380,23 @@ m3_err_t m3_object_visible(m3_object_handle_t object, bool visible) {
     // Update visibility state
     obj->visible = visible ? 1 : 0;
 
+    return M3_SUCCESS;
+}
+
+m3_err_t m3_object_rlock(
+    m3_object_handle_t object,
+    uint8_t rlock
+) {
+    if (!object.owner) return M3_ERR_EXIST_A;
+
+    // Get object
+    m3_object_t* obj = &(object.owner->obj_buf[object.id]);
+
+    // Update rotation lock state
+    obj->lx = (rlock & M3_RLOCK_X) ? 1 : 0;
+    obj->ly = (rlock & M3_RLOCK_Y) ? 1 : 0;
+
+    // Success!
     return M3_SUCCESS;
 }
 

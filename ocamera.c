@@ -63,8 +63,6 @@ m3_err_t m3_ocamera_render(
         min_cam_y + camera->height,
     };
 
-    // printf("C: (%d, %d):(%d,%d)\n", camera_bb.x_min, camera_bb.y_min, camera_bb.x_max, camera_bb.y_max);
-
     // Used to center objects in the screen
     int8_t screen_offset_x = width / 2;
     int8_t screen_offset_y = height / 2;
@@ -89,7 +87,7 @@ m3_err_t m3_ocamera_render(
         m3_pos_object root = m3_pos_object_get(object);
 
         // Transform camera position into cameraspace
-        m3_pos_root_reverse(&root, camera->pos, camera->quat);
+        m3_pos_root_reverse_rlock(&root, camera->pos, camera->quat, object);
 
         // Get all segments that make up this object
         uint16_t length = m3_object_segment_length(object);
