@@ -19,7 +19,9 @@ m3_segment_handle_t m3_segment_create(m3_scene_handle_t scene) {
     segment->x = 0;
     segment->y = 0;
     segment->z = 0;
+
     segment->visible = 1;
+    segment->absolute = 0;
 
     return ((m3_segment_handle_t) { scene, index });
 }
@@ -74,6 +76,20 @@ m3_err_t m3_segment_visible(m3_segment_handle_t handle, bool visible) {
     // Update visibility of segment
     m3_segment_t* segment = &(handle.owner->seg_buf[handle.id]);
     segment->visible = visible ? 1 : 0;
+
+    // Success!
+    return M3_SUCCESS;
+}
+
+m3_err_t m3_segment_absolute(
+    m3_segment_handle_t handle,
+    bool absolute
+) {
+    if (handle.owner == NULL) return M3_ERR_EXIST_A; // Segment doesn't exist
+
+    // Update visibility of segment
+    m3_segment_t* segment = &(handle.owner->seg_buf[handle.id]);
+    segment->absolute = absolute ? 1 : 0;
 
     // Success!
     return M3_SUCCESS;

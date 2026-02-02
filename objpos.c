@@ -44,7 +44,7 @@ m3_pos_chain m3_pos_segment_next(m3_pos_object root, uint8_t segment, m3_vec pre
     m3_vec s_pos = { seg.x, seg.y, seg.z };
 
     // Add `prev` position to segment for proper clean offset
-    m3_vec_add(&s_pos, prev);
+    if (!seg.absolute) m3_vec_add(&s_pos, prev);
 
     // Clone static pos to create `live` position
     // Allows `s_pos` to represent clean object-space coordinates

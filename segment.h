@@ -54,7 +54,7 @@ m3_segment_handle_t m3_segment_get(m3_scene_handle_t owner, uint8_t id);
 
 /**
  * Set the local x/y/z offset of the segment
- * @param segment   The handle of the segment to get the owner of
+ * @param segment   The handle of the segment to modify
  * @param vec       The offset that this segment represents
  * @returns         Whether the operation was successful
  * On failure, the original segment is unmodified
@@ -69,7 +69,7 @@ m3_err_t m3_segment_offset(
 
 /**
  * Set whether this segment is visible or not
- * @param segment   The handle of the segment to get the owner of
+ * @param segment   The handle of the segment to modify
  * @param visible   `true` to mark this segment as visible. `false` for purely positioning
  * @returns         Whether the operation was successful
  * On failure, the original segment is unmodified
@@ -81,11 +81,25 @@ m3_err_t m3_segment_visible(
     bool visible
 );
 
+/**
+ * Set whether this segment is positioned absolute (relative to parent object, rather than previous segment)
+ * @param segment   The handle of the segment to modify
+ * @param absolute  `true` to mark this segment as absolutely positioned. `false` for relative positioning (default)
+ * @returns         Whether the operation was successful
+ * On failure, the original segment is unmodified
+ * M3_SUCCESS: Success
+ * M3_ERR_EXIST_A: The segment does not exist
+ */
+m3_err_t m3_segment_absolute(
+    m3_segment_handle_t handle,
+    bool absolute
+);
+
 // -------- GETTERS --------
 
 /**
  * Get whether this segment is visible or not
- * @param segment   The handle of the segment to get the owner of
+ * @param segment   The handle of the segment to get the visibility state of
  * @returns         Whether the segment is visible. If the segment does not exist, a value of `false` is returned
  */
 bool m3_segment_visibility(m3_segment_handle_t handle);

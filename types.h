@@ -31,7 +31,10 @@ typedef struct m3_segment_t {
     // If 0: This segment is purely for positional movements
     uint8_t visible: 1;
 
-    uint8_t unused: 2;
+    // If 1: This segment is positioned relative to its parent object, rather than the previous segment
+    uint8_t absolute: 1;
+
+    uint8_t unused: 1;
 
     // Always true: Marks a slot in the scene segment heap as occupied
     uint8_t _marker: 1;
