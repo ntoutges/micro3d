@@ -1,10 +1,15 @@
 #include "./ocamera.h"
 
-m3_ocamera_handle_t m3_ocamera_create() {
+m3_ocamera_handle_t m3_ocamera_create_d() {
     m3_ocamera_t* camera = (m3_ocamera_t*) malloc(sizeof(m3_ocamera_t));
 
     if (!camera) return NULL;
 
+    // Rely on static handler for actual struct instantiation
+    return m3_ocamera_create_s(camera);
+}
+
+m3_ocamera_handle_t m3_ocamera_create_s(m3_ocamera_t* camera) {
     camera->pos = (m3_vec){ 0, 0, 0 };
     camera->quat = (m3_quat){ 0, 0, 0, 127 };
 

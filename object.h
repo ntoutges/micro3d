@@ -40,6 +40,39 @@ m3_scene_handle_t m3_object_owner(m3_object_handle_t object);
 
 // -------- OBJECT/SEGMENT MODIFICATION --------
 
+/**
+ * Use a static segment buffer to store segment references within an object
+ * This will copy as many segments as possible from `buf` into the object's segment list
+ * @param object    The handle of the object to allocate segments for
+ * @param buf       The buffer to use for segments
+ * @param len       The length of the buffer. Note that this must be a power of 2.
+ * If not: only the greatest power of 2 less than `len` will be used/available
+ * @returns         Whether the operation was successful
+ * On failure, the original object is unmodified
+ * M3_SUCCESS: Success
+ * M3_ERR_EXIST_A: The object does not exist
+ * M3_ERR_EXIST_B: The objec's data is _not_ statically allocated
+ */
+m3_err_t m3_object_alloc_s(
+    m3_object_handle_t object,
+    uint8_t* buf,
+    uint8_t len
+);
+
+/**
+ * Switch an object from static segment memory to dynamic segment memory
+ * This will copy all segments from the static buffer into a newly allocated dynamic buffer
+ * @param object    The handle of the object to free segments for
+ * @returns         Whether the operation was successful
+ * On failure, the original object is unmodified
+ * M3_SUCCESS: Success
+ * M3_ERR_EXIST_A: The object does not exist
+ * M3_ERR_ALLOC: Unable to allocate space for the new dynamic segment buffer
+ */
+m3_err_t m3_object_free_s(
+    m3_object_handle_t object
+);
+
 // Result of object insertion
 typedef struct m3_object_ires_t {
     uint8_t index; // The index of the insertion

@@ -54,8 +54,9 @@ typedef struct m3_object_t {
     // If set to self: no parent
     uint8_t parent;
 
-    uint8_t scap: 4; // (S)mall (CAP)acity Number of segments able to be used in buf; Stores log2(capacity)
-                     // Special case: scap = 0b1111 -> capacity = 0
+    uint8_t scap: 3; // (S)mall (CAP)acity Number of segments able to be used in buf; Stores log2(capacity)
+                     // Special case: scap = 0b111 -> capacity = 0
+    uint8_t smem: 1; // (S)tatic (MEM)ory If set: segments stored in fixed-size array, else dynamically allocated
     uint8_t _marker: 1; // Always non-0: Marks a slot on the scene object heap as occupied
     
     uint8_t visible: 1; // Marks whether this object is visilbe (1) or hidden.

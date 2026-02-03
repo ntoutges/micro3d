@@ -15,30 +15,27 @@ m3_scene_handle_t m3_scene_create_d(
         return NULL;
     }
 
-    // Rely on static handler for actual struct creation
-    m3_scene_handle_t scene = m3_scene_create_s(seg_buf, seg_size, obj_buf, obj_size);
-
-    // Free now-unused resources
+    // Attempt to allocate space for scene
+    m3_scene_t* scene = (m3_scene_t*) malloc(sizeof(m3_scene_t));
     if (scene == NULL) {
         free(seg_buf);
         free(obj_buf);
         return NULL;
     }
 
+    // Rely on static handler for actual struct instantiation
+    m3_scene_create_s(scene, seg_buf, seg_size, obj_buf, obj_size);
+
     return scene;
 }
 
 m3_scene_handle_t m3_scene_create_s(
+    m3_scene_t* scene,
     m3_segment_t* seg_buf,
     uint8_t seg_size,
     m3_object_t* obj_buf,
     uint8_t obj_size
 ) {
-    
-    // Attempt to allocate space for scene
-    m3_scene_t* scene = (m3_scene_t*) malloc(sizeof(m3_scene_t));
-    if (scene == NULL) return NULL;
-
     // Store segment/object buffers
     scene->seg_size = seg_size;
     scene->obj_size = obj_size;

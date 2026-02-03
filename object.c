@@ -38,8 +38,9 @@ m3_object_handle_t m3_object_create(m3_scene_handle_t scene) {
     object->ly = 0;
 
     // Initialize arraylist holding segments
-    object->scap = 0b1111; // Special case -> capacity = 0
+    object->scap = 0b111; // Special case -> capacity = 0
     object->soffset = 0; // 0 - 0 = size
+    object->smem = 0; // 0 = dynamic allocation
     object->segments = NULL;
 
     return ((m3_object_handle_t) { scene, index });
@@ -67,6 +68,83 @@ bool m3_object_exists(m3_object_handle_t object) {
 
 m3_scene_handle_t m3_object_owner(m3_object_handle_t object) {
     return object.owner;
+}
+
+m3_err_t m3_object_alloc_s(
+    m3_object_handle_t object,
+    uint8_t* buf,
+    uint8_t len
+) {
+    if (!object.owner) return M3_ERR_EXIST_A;
+
+    // Get object
+    m3_object_t* obj = &(object.owner->obj_buf[object.id]);
+
+    // Get current size of segments list
+    uint16_t size = _m3_object_segments_get_size(obj);
+
+    // Update size/capacity to match new static buffer
+    _m3_object_segments_set_capacity(obj, len);
+
+    // Get the stored length 2 (* floor(log2(len))
+    uint16_t st_len = _m3_object_segments_get_capacity(obj);
+
+    // Copy as many segments as possible from object's segment list into `buf`
+    uint16_t copy_ct = size < st_len ? size : st_len;
+    memcpy(buf, obj->segments, copy_ct * sizeof(uint8_t));
+
+    // Update size of segments
+    _m3_object_segments_set_size(obj, copy_ct);
+
+    // Free old buffer if required
+    if (!obj->smem) {
+        free(obj->segments);
+    }
+
+    // Update segments to static buffer
+    obj->segments = buf;
+    obj->smem = 1;
+
+    return M3_SUCCESS;
+}
+
+m3_err_t m3_object_free_s(
+    m3_object_handle_t object
+) {
+    if (!object.owner) return M3_ERR_EXIST_A;
+
+    // Get object
+    m3_object_t* obj = &(object.owner->obj_buf[object.id]);
+    if (!obj->smem) return M3_ERR_EXIST_B;
+
+    // Get current size of segments list
+    uint16_t size = _m3_object_segments_get_size(obj);
+
+    // Need to reallocate
+    if (size != 0) {
+        uint8_t* segments = malloc(sizeof(uint8_t) * size);
+
+        // Unable to allocate space for segments
+        if (!segments) return M3_ERR_ALLOC;
+
+        // Transfer all segments references to `segments`
+        memcpy(segments, obj->segments, sizeof(uint8_t) * size);
+
+        // Update pointer
+        obj->segments = segments;
+
+    }
+
+    // Update pointer to null, as nothing needs to be allocated
+    else {
+        obj->segments = NULL;
+    }
+
+    // Update size/capacity fields
+    _m3_object_segments_set_capacity(obj, size);
+    _m3_object_segments_set_size(obj, size);
+
+    return M3_SUCCESS;
 }
 
 m3_object_ires_t m3_object_push_segment(
@@ -177,7 +255,7 @@ m3_err_t m3_object_clear(m3_object_handle_t object) {
     free(obj->segments);
 
     // Reset arraylist holding segments
-    obj->scap = 0b1111; // Special case -> capacity = 0
+    obj->scap = 0b111; // Special case -> capacity = 0
     obj->soffset = 0; // 0 - 0 = size
     obj->segments = NULL;
 
@@ -200,8 +278,8 @@ bool _m3_object_update_segments(m3_object_t* object, uint16_t size) {
     if (size > curr_cap) new_cap = new_cap ? new_cap * 2 : 1; // Need to expand capacity
     else if (size < curr_cap / 4) new_cap /= 2; // Need to shrink capacity
 
-    // Need to update capacity
-    if (new_cap != curr_cap) {
+    // Need to update capacity; Only allowed to if _not_ static memory
+    if (new_cap != curr_cap && !object->smem) {
 
         // Attempt to allocate space for the larger/smaller segment list
         uint8_t* segments = (uint8_t*) realloc(object->segments, new_cap * sizeof(uint8_t));
@@ -217,6 +295,9 @@ bool _m3_object_update_segments(m3_object_t* object, uint16_t size) {
         // Success!
         return true;
     }
+
+    // Check if capacity grow requested while static
+    if (object->smem && new_cap > curr_cap) return false; // Unable to expand static memory
 
     // Simply need to update size value
     _m3_object_segments_set_size(object, size);
@@ -239,7 +320,7 @@ uint16_t _m3_object_segments_get_size(m3_object_t* object) {
  * @returns         The computed capacity of the segments list in the range [0, 256]
  */
 uint16_t _m3_object_segments_get_capacity(m3_object_t* object) {
-    return object->scap == 0b1111
+    return object->scap == 0b111
         ? 0 // Special case: capacity = 0
         : ((uint16_t) 0x0001) << object->scap; // capacity = 2 ** scap
 }
@@ -264,7 +345,7 @@ void _m3_object_segments_set_size(m3_object_t* object, uint16_t size) {
 void _m3_object_segments_set_capacity(m3_object_t* object, uint16_t cap) {
     // Special case: scap = 0
     if (cap == 0) {
-        object->scap = 0b1111;
+        object->scap = 0b111;
         return;
     }
 

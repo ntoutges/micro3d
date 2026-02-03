@@ -60,7 +60,8 @@ void setup_scene() {
   // --- Populate scene with a 3d arrow ---
 
   // Create the main scene
-  scene = m3_scene_create_s(
+  m3_scene_create_s(
+    scene,
     scene_segments,
     sizeof(scene_segments) / sizeof(*scene_segments),
     scene_objects,
@@ -68,7 +69,7 @@ void setup_scene() {
   );
 
   // Create camera
-  camera = m3_ocamera_create();
+  m3_ocamera_create_s(camera);
   m3_ocamera_resize(camera, 16, 8);
   m3_ocamera_position(camera, (m3_vec){ 4, 0, 0 });
 

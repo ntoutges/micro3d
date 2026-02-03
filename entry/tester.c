@@ -12,8 +12,8 @@ int main() {
     m3_scene_handle_t scene = m3_scene_create_d(128, 16);
 
     // Create camera
-    m3_ocamera_handle_t camera = m3_ocamera_create();
-    m3_ocamera_resize(camera, 16, 8);
+    m3_ocamera_handle_t camera = m3_ocamera_create_d();
+    m3_ocamera_resize(camera, 32, 16);
     m3_ocamera_position(camera, (m3_vec){ 0, 0, 0 });
 
     m3_quat cquat = { 38, 0, 0, 90 };
@@ -31,9 +31,12 @@ int main() {
     m3_object_pset(point, arrow);
 
     // Setup object data
-    m3_object_position(fletching, (m3_vec){ -4, 0, 0 });
-    m3_object_position(point, (m3_vec){ 3, 0, 0 });
+    m3_object_position(fletching, (m3_vec){ -7, 0, 0 });
+    m3_object_position(point, (m3_vec){ 7, 0, 0 });
     m3_object_rlock(point, M3_RLOCK_X);
+
+    uint8_t amem[16];
+    m3_object_alloc_s(arrow, amem, sizeof(amem) / sizeof(*amem));
 
     // -- Create segments --
     // Fletching
@@ -67,32 +70,32 @@ int main() {
 
     // -- Populate segments --
     // Fletching
-    m3_segment_offset(af0, (m3_vec){ -1, 1, 1 });
-    m3_segment_offset(af1, (m3_vec){ -1, 1, -1 });
-    m3_segment_offset(af2, (m3_vec){ -1, -1, 1 });
-    m3_segment_offset(af3, (m3_vec){ -1, -1, -1 });
+    m3_segment_offset(af0, (m3_vec){ -2, 2, 2 });
+    m3_segment_offset(af1, (m3_vec){ -2, 2, -2 });
+    m3_segment_offset(af2, (m3_vec){ -2, -2, 2 });
+    m3_segment_offset(af3, (m3_vec){ -2, -2, -2 });
 
     // Body
     m3_segment_offset(ab0, (m3_vec){ 7, 0, 0 });
-    m3_segment_offset(abp, (m3_vec){ -4, 0, 0 });
+    m3_segment_offset(abp, (m3_vec){ -7, 0, 0 });
     m3_segment_visible(abp, false);
     
     // Ring
-    m3_segment_offset(ar0, (m3_vec){ 0, 1, 1 });
-    m3_segment_offset(ar1, (m3_vec){ 0, 0, 2 });
-    m3_segment_offset(ar2, (m3_vec){ 0, -1, 1 });
-    m3_segment_offset(ar3, (m3_vec){ 0, -2, 0 });
-    m3_segment_offset(ar4, (m3_vec){ 0, -1, -1 });
-    m3_segment_offset(ar5, (m3_vec){ 0, 0, -2 });
-    m3_segment_offset(ar6, (m3_vec){ 0, 1, -1 });
-    m3_segment_offset(ar7, (m3_vec){ 0, 2, 0 });
-    m3_segment_offset(arp, (m3_vec){ 0, 1, -2 });
+    m3_segment_offset(ar0, (m3_vec){ 0, 2, 2 });
+    m3_segment_offset(ar1, (m3_vec){ 0, 0, 4 });
+    m3_segment_offset(ar2, (m3_vec){ 0, -2, 2 });
+    m3_segment_offset(ar3, (m3_vec){ 0, -4, 0 });
+    m3_segment_offset(ar4, (m3_vec){ 0, -2, -2 });
+    m3_segment_offset(ar5, (m3_vec){ 0, 0, -4 });
+    m3_segment_offset(ar6, (m3_vec){ 0, 2, -2 });
+    m3_segment_offset(ar7, (m3_vec){ 0, 4, 0 });
+    m3_segment_offset(arp, (m3_vec){ 0, 2, -4 });
     m3_segment_visible(arp, false);
 
     // Point
-    m3_segment_offset(ap0, (m3_vec){ -3, 2, 0 });
-    m3_segment_offset(ap1, (m3_vec){ -3, -2, 0 });
-    m3_segment_offset(app, (m3_vec){ 3, 0, 0 });
+    m3_segment_offset(ap0, (m3_vec){ -6, 4, 0 });
+    m3_segment_offset(ap1, (m3_vec){ -6, -4, 0 });
+    m3_segment_offset(app, (m3_vec){ 6, 0, 0 });
     m3_segment_absolute(app, true);
     m3_segment_visible(app, false);
 
@@ -104,6 +107,7 @@ int main() {
     // -- Fill objects with segments --
     // Setup base arrow
     m3_object_push_segment(arrow, abp);
+    m3_object_push_segment(arrow, ab0);
     m3_object_push_segment(arrow, ab0);
     m3_object_push_segment(arrow, arp);
     m3_object_push_segment(arrow, ar0);
@@ -133,13 +137,13 @@ int main() {
     // -- RENDER --
 
     // Allocate space for camera to render to
-    const int width = 128;
-    const int height = 64;
+    const int width = 64;
+    const int height = 32;
 
     uint8_t target[width * height / 8];
 
     const int itts = 24;
-    while (1) {
+    // while (1) {
         for (int i = 0; i <= itts; i++) {
 
             // Clear frame
@@ -189,7 +193,7 @@ int main() {
 
             if (i != itts) usleep(4000000 / (itts + 1));
         }
-    }
+    // }
 
     return 0;
 }

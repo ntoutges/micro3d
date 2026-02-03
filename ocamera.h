@@ -38,12 +38,17 @@ typedef m3_ocamera_t* m3_ocamera_handle_t;
 
 /**
  * Create a camera at (0,0,0) with the specified width/height to capture
- * @param width     The width of the scene to capture
- * @param height    The height of the scene to capture
  * @returns         A handle to reference this camera later
  * NULL is returned if the camera could not be created (unable to malloc space for camera data)
  */
-m3_ocamera_handle_t m3_ocamera_create();
+m3_ocamera_handle_t m3_ocamera_create_d();
+
+/**
+ * Create a camera at (0,0,0) with the specified width/height to capture
+ * @param camera    The camera struct to populate
+ * @returns         A handle to reference this camera later
+ */
+m3_ocamera_handle_t m3_ocamera_create_s(m3_ocamera_handle_t camera);
 
 // -------- CAMERA POSITION --------
 
