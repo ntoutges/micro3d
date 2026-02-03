@@ -1,6 +1,6 @@
 // Used to test Micro3d library
 
-#include "../micro3d.h"
+#include "../src/micro3d.h"
 #include "stdio.h"
 
 #include <unistd.h>

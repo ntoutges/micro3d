@@ -1,4 +1,4 @@
-#include "micro3d.h"
+#include "src/micro3d.h"
 #include <Adafruit_QMC5883P.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
