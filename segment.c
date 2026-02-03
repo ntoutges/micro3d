@@ -77,6 +77,8 @@ m3_err_t m3_segment_visible(m3_segment_handle_t handle, bool visible) {
     m3_segment_t* segment = &(handle.owner->seg_buf[handle.id]);
     segment->visible = visible ? 1 : 0;
 
+    printf("(%d) visible: %d\n", handle.id, segment->visible);
+
     // Success!
     return M3_SUCCESS;
 }

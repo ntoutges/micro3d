@@ -48,7 +48,7 @@ m3_ocamera_handle_t m3_ocamera_create_d();
  * @param camera    The camera struct to populate
  * @returns         A handle to reference this camera later
  */
-m3_ocamera_handle_t m3_ocamera_create_s(m3_ocamera_handle_t camera);
+m3_ocamera_handle_t m3_ocamera_create_s(m3_ocamera_t* camera);
 
 // -------- CAMERA POSITION --------
 

@@ -5,26 +5,47 @@
 
 #include <unistd.h>
 
+m3_scene_t scene;
+m3_ocamera_t camera;
+
+m3_object_handle_t arrow;
+m3_object_handle_t fletching;
+m3_object_handle_t point;
+m3_segment_handle_t tip;
+
+m3_object_t scene_objects[3];
+m3_segment_t scene_segments[22];
+
+uint8_t arrow_segments[16];
+uint8_t fletching_segments[8];
+uint8_t point_segments[8];
+
 int main() {
     // --- Populate scene with a 3d arrow ---
 
     // Create the main scene
-    m3_scene_handle_t scene = m3_scene_create_d(128, 16);
+    m3_scene_create_s(
+        &scene,
+        scene_segments,
+        sizeof(scene_segments) / sizeof(*scene_segments),
+        scene_objects,
+        sizeof(scene_objects) / sizeof(*scene_objects)
+    );
 
     // Create camera
-    m3_ocamera_handle_t camera = m3_ocamera_create_d();
-    m3_ocamera_resize(camera, 32, 16);
-    m3_ocamera_position(camera, (m3_vec){ 0, 0, 0 });
-
-    m3_quat cquat = { 38, 0, 0, 90 };
-    // m3_quat cquat = { 5, 0, 0, 5 };
-    m3_quat_normalize(&cquat);
-    m3_ocamera_pivot(camera, cquat);
+    m3_ocamera_create_s(&camera);
+    m3_ocamera_resize(&camera, 32, 16);
+    m3_ocamera_position(&camera, (m3_vec){ 1, 0, 0 });
 
     // Create required objects
-    m3_object_handle_t arrow = m3_object_create(scene);
-    m3_object_handle_t fletching = m3_object_create(scene);
-    m3_object_handle_t point = m3_object_create(scene);
+    arrow = m3_object_create(&scene);
+    fletching = m3_object_create(&scene);
+    point = m3_object_create(&scene);
+
+    // Assign objects to their buffers
+    m3_object_alloc_s(arrow, arrow_segments, sizeof(arrow_segments));
+    m3_object_alloc_s(fletching, fletching_segments, sizeof(fletching_segments));
+    m3_object_alloc_s(point, point_segments, sizeof(point_segments));
 
     // Setup object hierarchy
     m3_object_pset(fletching, arrow);
@@ -35,38 +56,38 @@ int main() {
     m3_object_position(point, (m3_vec){ 7, 0, 0 });
     m3_object_rlock(point, M3_RLOCK_X);
 
-    uint8_t amem[16];
-    m3_object_alloc_s(arrow, amem, sizeof(amem) / sizeof(*amem));
-
     // -- Create segments --
     // Fletching
-    m3_segment_handle_t af0 = m3_segment_create(scene);
-    m3_segment_handle_t af1 = m3_segment_create(scene);
-    m3_segment_handle_t af2 = m3_segment_create(scene);
-    m3_segment_handle_t af3 = m3_segment_create(scene);
+    m3_segment_handle_t af0 = m3_segment_create(&scene);
+    m3_segment_handle_t af1 = m3_segment_create(&scene);
+    m3_segment_handle_t af2 = m3_segment_create(&scene);
+    m3_segment_handle_t af3 = m3_segment_create(&scene);
 
     // Body
-    m3_segment_handle_t ab0 = m3_segment_create(scene);
-    m3_segment_handle_t abp = m3_segment_create(scene);
+    m3_segment_handle_t ab0 = m3_segment_create(&scene);
+    m3_segment_handle_t ab1 = m3_segment_create(&scene);
+    m3_segment_handle_t tip = m3_segment_create(&scene);
+    m3_segment_handle_t abr = m3_segment_create(&scene);
+    m3_segment_handle_t abp = m3_segment_create(&scene);
 
     // Ring
-    m3_segment_handle_t ar0 = m3_segment_create(scene);
-    m3_segment_handle_t ar1 = m3_segment_create(scene);
-    m3_segment_handle_t ar2 = m3_segment_create(scene);
-    m3_segment_handle_t ar3 = m3_segment_create(scene);
-    m3_segment_handle_t ar4 = m3_segment_create(scene);
-    m3_segment_handle_t ar5 = m3_segment_create(scene);
-    m3_segment_handle_t ar6 = m3_segment_create(scene);
-    m3_segment_handle_t ar7 = m3_segment_create(scene);
-    m3_segment_handle_t arp = m3_segment_create(scene);
+    m3_segment_handle_t ar0 = m3_segment_create(&scene);
+    m3_segment_handle_t ar1 = m3_segment_create(&scene);
+    m3_segment_handle_t ar2 = m3_segment_create(&scene);
+    m3_segment_handle_t ar3 = m3_segment_create(&scene);
+    m3_segment_handle_t ar4 = m3_segment_create(&scene);
+    m3_segment_handle_t ar5 = m3_segment_create(&scene);
+    m3_segment_handle_t ar6 = m3_segment_create(&scene);
+    m3_segment_handle_t ar7 = m3_segment_create(&scene);
+    m3_segment_handle_t arp = m3_segment_create(&scene);
 
     // Point
-    m3_segment_handle_t ap0 = m3_segment_create(scene);
-    m3_segment_handle_t ap1 = m3_segment_create(scene);
-    m3_segment_handle_t app = m3_segment_create(scene);
+    m3_segment_handle_t ap0 = m3_segment_create(&scene);
+    m3_segment_handle_t ap1 = m3_segment_create(&scene);
+    m3_segment_handle_t app = m3_segment_create(&scene);
 
     // Origin
-    m3_segment_handle_t aorigin = m3_segment_create(scene);
+    m3_segment_handle_t aorigin = m3_segment_create(&scene);
 
     // -- Populate segments --
     // Fletching
@@ -77,6 +98,11 @@ int main() {
 
     // Body
     m3_segment_offset(ab0, (m3_vec){ 7, 0, 0 });
+    m3_segment_offset(ab1, (m3_vec){ 6, 0, 0 });
+    m3_segment_visible(ab1, false);
+    m3_segment_offset(tip, (m3_vec){ 0, 0, 0 });
+    m3_segment_offset(abr, (m3_vec){ -6, 0, 0 });
+    m3_segment_visible(abr, false);
     m3_segment_offset(abp, (m3_vec){ -7, 0, 0 });
     m3_segment_visible(abp, false);
     
@@ -109,6 +135,9 @@ int main() {
     m3_object_push_segment(arrow, abp);
     m3_object_push_segment(arrow, ab0);
     m3_object_push_segment(arrow, ab0);
+    m3_object_push_segment(arrow, ab1);
+    m3_object_push_segment(arrow, tip);
+    m3_object_push_segment(arrow, abr);
     m3_object_push_segment(arrow, arp);
     m3_object_push_segment(arrow, ar0);
     m3_object_push_segment(arrow, ar1);
@@ -161,12 +190,13 @@ int main() {
             m3_vec pivot_helper = { 127, 0, 0 };
             m3_vec_rotate(&pivot_helper, quat);
 
-            m3_object_visible(point, abs(pivot_helper.z) < 100); // Hide point once occluded
+            m3_object_visible(point, abs(pivot_helper.z) < 90); // Hide point once occluded
+            m3_segment_visible(tip, pivot_helper.z <= -90); // Hide tip when forward
             m3_object_visible(fletching, pivot_helper.z >= 0); // Hide point once occluded
             
 
             // -- Render --
-            m3_ocamera_render(camera, scene, target, width, height, M3_ORIENTATION_HL);
+            m3_ocamera_render(&camera, &scene, target, width, height, M3_ORIENTATION_HL);
 
             // Print out rasterized image
             printf("\n");

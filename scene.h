@@ -32,7 +32,7 @@ m3_scene_handle_t m3_scene_create_d(
  * @returns         A handle to reference the scene later. If scene could not be created, returns NULL
  */
 m3_scene_handle_t m3_scene_create_s(
-    m3_scene_handle_t scene,
+    m3_scene_t* scene,
     m3_segment_t* seg_buf,
     uint8_t seg_size,
     m3_object_t* obj_buf,
