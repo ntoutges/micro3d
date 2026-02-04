@@ -9,5 +9,5 @@ ENTRY="${1:-tester.c}"
 #     nodemon --watch "*" --ext "c" --exec "./make.sh && ./a.exe"
 # else
     # Just build
-    gcc -o a.exe src/*.c "./entry/$ENTRY" -Wall -g -lm
+    gcc -o a.exe src/*.c "./entry/$ENTRY" -Wall -g -lm -Os
 # fi

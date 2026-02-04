@@ -3,6 +3,7 @@
 #include "micro3d.h"
 #include <Arduino.h>
 #include <Adafruit_SSD1306.h>
+#include <Adafruit_QMC5883P.h>
 
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT 64 // OLED display height, in pixels
@@ -15,6 +16,11 @@
 #define OLED_RESET 13
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT,
   OLED_MOSI, OLED_CLK, OLED_DC, OLED_RESET, OLED_CS);
+Adafruit_QMC5883P mag;
+
+// Magnetometer calibration data
+// Stored in format min(x, y, z), max(x, y, z)
+float mcal[6] = { -0.31, -0.61, -0.59, 0.82, 0.26, 0.35 };
 
 m3_scene_t scene;
 m3_ocamera_handle_t camera;
@@ -41,8 +47,20 @@ void setup() {
 
     Serial.println("Successfully allocated SSD1306");
 
-    display.clearDisplay();
-    display.begin();
+    // Prepare magnetometer
+    // while (!mag.begin()) {
+    //     Serial.println("Failed to find QMC5883L chip!");
+    //     delay(1000);
+    // }
+    Serial.println("Found QMC5883L!");
+
+    // Setup magnetometer
+    // mag.setMode(QMC5883P_MODE_NORMAL);
+    // mag.setODR(QMC5883P_ODR_50HZ);
+    // mag.setOSR(QMC5883P_OSR_4);
+    // mag.setDSR(QMC5883P_DSR_2);
+    // mag.setRange(QMC5883P_RANGE_2G);
+    // mag.setSetResetMode(QMC5883P_SETRESET_ON);
 }
 
 m3_object_t scene_objects[3];
@@ -51,7 +69,6 @@ m3_segment_t scene_segments[22];
 uint8_t arrow_segments[16];
 uint8_t fletching_segments[8];
 uint8_t point_segments[8];
-
 
 void setup_scene() {
     // --- Populate scene with a 3d arrow ---
@@ -78,9 +95,9 @@ void setup_scene() {
     point = m3_object_create(&scene);
 
     // Assign objects to their buffers
-    m3_object_alloc_s(arrow, arrow_segments, sizeof(arrow_segments));
-    m3_object_alloc_s(fletching, fletching_segments, sizeof(fletching_segments));
-    m3_object_alloc_s(point, point_segments, sizeof(point_segments));
+    m3_object_alloc_s(arrow, arrow_segments, sizeof(arrow_segments) / sizeof(*arrow_segments));
+    m3_object_alloc_s(fletching, fletching_segments, sizeof(fletching_segments) / sizeof(*fletching_segments));
+    m3_object_alloc_s(point, point_segments, sizeof(point_segments) / sizeof(*point_segments));
 
     // Setup object hierarchy
     m3_object_pset(fletching, arrow);
@@ -199,61 +216,31 @@ void setup_scene() {
     m3_object_push_segment(point, ap1);
 }
 
-float min_x = 0.21;
-float min_y = -0.78;
-float max_x = 0.79;
-float max_y = -0.21;
-
 void loop() {
 
     // Get x/y rotation 
     // float x, y, z;
     // delay(2);
     // if (!mag.getGaussField(&x, &y, &z)) return;
-    // float cx = (x - min_x) / (max_x - min_x) * 2 - 1;
-    // float cy = (y - min_y) / (max_y - min_y) * 2 - 1;
 
-    // float mag = sqrt(cx*cx + cy*cy);
-    // float ucx = cx / mag;
-    // float ucy = cy / mag;
+    // x = 2 * (x - mcal[0]) / (mcal[3] - mcal[0]) - 1;
+    // y = 2 * (y - mcal[1]) / (mcal[4] - mcal[1]) - 1;
+
+    // float mag = sqrt(x*x + y*y);
+    // float ucx = x / mag;
+    // float ucy = y / mag;
 
     float ucy = sin(millis() / 1000.0);
     float ucx = cos(millis() / 1000.0);
 
-    m3_vec dir = { 127 * ucx, 0, 127 * ucy };
+    m3_vec dir = { (int8_t) roundf(127 * ucx), 0, (int8_t) roundf(127 * ucy) };
     m3_vec up = { 0, 0, 1 };
 
     m3_vec_normalize(&dir);
     m3_vec_normalize(&up);
 
-    Serial.print("(");
-    Serial.print(dir.x);
-    Serial.print(", ");
-    Serial.print(dir.y);
-    Serial.print(", ");
-    Serial.print(dir.z);
-    Serial.print(" / ");
-
-    Serial.print("(");
-    Serial.print(up.x);
-    Serial.print(", ");
-    Serial.print(up.y);
-    Serial.print(", ");
-    Serial.print(up.z);
-    Serial.print(" | ");
-
     m3_quat quat = m3_vec_to_quat(dir, up);
     // m3_quat quat = { 0, 127 * ucx, 0, 127 * ucy };
-
-    Serial.print("(");
-    Serial.print(quat.x);
-    Serial.print(", ");
-    Serial.print(quat.y);
-    Serial.print(", ");
-    Serial.print(quat.z);
-    Serial.print(", ");
-    Serial.print(quat.w);
-    Serial.print(")\n");
 
     m3_quat_normalize(&quat);
 
