@@ -179,7 +179,20 @@ int main() {
             memset(target, 0, sizeof(target));
 
             // Rotate arrow by some amount
-            m3_quat quat = { 0, 127 * sin(i * 3.14159 / itts), 0, 127 * cos(i * 3.14159 / itts) };
+            // m3_quat quat = { 0, 127 * sin(i * 3.14159 / itts), 0, 127 * cos(i * 3.14159 / itts) };
+            m3_vec dir = { 127 * cos(i * 2 * 3.14159 / itts), 0, 127 * sin(i * 2 * 3.14159 / itts) };
+            m3_vec up = { 127 * sin(i * 2 * 3.14159 / itts), 0, -127 * cos(i * 2 * 3.14159 / itts)  };
+
+            m3_vec_normalize(&dir);
+            m3_vec_normalize(&up);
+
+            printf("i: %d, 2*i/itts: %f\n", i, 2.0 * i / itts);
+
+            m3_quat quat = m3_vec_to_quat(
+                dir,
+                up
+            );
+
             // m3_quat quat = { 0, 0, 0, 1 };
             m3_quat_normalize(&quat);
             m3_object_pivot(arrow, quat);

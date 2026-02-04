@@ -133,7 +133,6 @@ inline m3_quat m3_quat_conj(m3_quat src) {
     };
 }
 
-// OLD: uses fragile matrix math to transform vectors
 m3_quat m3_vec_to_quat(m3_vec dir, m3_vec _up) {
 
     // Create unit basis vector
@@ -147,14 +146,51 @@ m3_quat m3_vec_to_quat(m3_vec dir, m3_vec _up) {
     // Important intermediates
     float trace = (dir.x + orth.y + up.z) / 127.0; // Used to apply rule of dir/up vector default positioning
 
-    // @TODO: Handle case where (t < 0)
+    int16_t rx, ry, rz, rw;
 
-    float scale = sqrtf(trace + 1) * 2; // Used to maintain proper scale
+    // W is _not_ the biggest component: Find trace via largest diagonal element
+    if (trace < 0) {
+        
+        // X component greatest, by a margin
+        if (dir.x > orth.y && dir.x > up.z + 4) {
+            trace = (dir.x - orth.y - up.z) / 127.0;
+            float scale = sqrtf(trace + 1) * 2;
 
-    int16_t rx = roundf((orth.z - up.y) / scale);
-    int16_t ry = roundf((up.x - dir.z) / scale);
-    int16_t rz = roundf((dir.y - orth.x) / scale);
-    int16_t rw = roundf(127.0 * scale / 4.0);
+            rx = roundf(127.0 * scale / 4.0);
+            ry = roundf((orth.x + dir.y) / scale);
+            rz = roundf((dir.z + up.x) / scale);
+            rw = roundf((orth.z - up.y) / scale);
+        }
+        // Y component greatest, by a margin
+        else if (orth.y > up.z) {
+            trace = (orth.y - dir.x - up.z) / 127.0;
+            float scale = sqrtf(trace + 1) * 2;
+
+            rx = roundf((orth.x + dir.y) / scale);
+            ry = roundf(127.0 * scale / 4.0);
+            rz = roundf((up.y + orth.z) / scale);
+            rw = roundf((up.x - dir.z) / scale);
+        }
+        // Z component greatest
+        else {
+            trace = (up.z - dir.x - orth.y) / 127.0;
+            float scale = sqrtf(trace + 1) * 2;
+
+            rx = roundf((dir.z + up.x) / scale);
+            ry = roundf((up.y + orth.z) / scale);
+            rz = roundf(127.0 * scale / 4.0);
+            rw = roundf((dir.y - orth.x) / scale);
+        }
+    }
+
+    else {
+        float scale = sqrtf(trace + 1) * 2; // Used to maintain proper scale
+
+        rx = roundf((orth.z - up.y) / scale);
+        ry = roundf((up.x - dir.z) / scale);
+        rz = roundf((dir.y - orth.x) / scale);
+        rw = roundf(127.0 * scale / 4.0);
+    }
 
     // Normalize rx/ry/rz/wx
     float inv_mag = 127.0 / sqrtf(rx*rx + ry*ry + rz*rz + rw*rw);
