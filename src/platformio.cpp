@@ -23,6 +23,19 @@ Adafruit_QMC5883P mag;
 #define OLED_CS    10
 #define OLED_RESET 9
 
+// Keep screen awake for this long after some activation event
+#define SLEEP_TIMEOUT 5000
+#define KEEPALIVE_PIN 2
+#define SLEEP_DIR_DIFF 0.1 // Cumulative diff of 10 units between prev and curr quat for keepalive signal
+
+// Used to indicate when to send the display to sleep
+uint32_t sleep_at = 0;
+bool sleeping = true;
+
+// Store previous rotation data for wake-on-move info
+float prev_dir_x = 0;
+float prev_dir_y = 0;
+
 // Magnetometer calibration data
 // Stored in format min(x, y, z), max(x, y, z)
 float mcal[6] = { -0.31, -0.61, -0.59, 0.82, 0.26, 0.35 };
@@ -48,26 +61,22 @@ void ssd1306_begin();   // Initialize the ssd1306 device
 void ssd1306_display(); // Forward the contents of `ssd1306_buf` to the display
 void ssd1306_command(const uint8_t *c, uint8_t n); // Send a list of commands to the display
 
+// Reset keepalive timer
+void keepalive();
+
 void setup() {
     Serial.begin(115200);
+
+    pinMode(KEEPALIVE_PIN, INPUT_PULLUP);
+    attachInterrupt(digitalPinToInterrupt(KEEPALIVE_PIN), keepalive, RISING);
 
     setup_scene();
     ssd1306_begin();
 
-    // Prepare output display
-    // if(!display.begin(SSD1306_SWITCHCAPVCC)) {
-    //     Serial.println(F("SSD1306 allocation failed"));
-    //     while (1);
-    // }
-
-    // Serial.println("Successfully allocated SSD1306");
-
     // Prepare magnetometer
     while (!mag.begin()) {
-        Serial.println("Failed to find QMC5883L chip!");
         delay(1000);
     }
-    Serial.println("Found QMC5883L!");
 
     // Setup magnetometer
     mag.setMode(QMC5883P_MODE_NORMAL);
@@ -232,7 +241,6 @@ void setup_scene() {
 }
 
 void loop() {
-
     // Get x/y rotation 
     float x, y, z;
     delay(2);
@@ -241,12 +249,40 @@ void loop() {
     x = 2 * (x - mcal[0]) / (mcal[3] - mcal[0]) - 1;
     y = 2 * (y - mcal[1]) / (mcal[4] - mcal[1]) - 1;
 
-    float mag = sqrt(x*x + y*y);
-    float ucx = x / mag;
-    float ucy = y / mag;
+    float inv_mag = 1 / sqrt(x*x + y*y);
+    float ucx = x * inv_mag;
+    float ucy = y * inv_mag;
 
-    // float ucy = sin(millis() / 1000.0);
-    // float ucx = cos(millis() / 1000.0);
+    // Get difference between current and previous quat
+    float diff = fabsf(ucx - prev_dir_x) + fabsf(ucy - prev_dir_y);
+    if (diff >= SLEEP_DIR_DIFF) keepalive();
+
+    // Don't bother rendering when sleeping
+    if (sleeping) {
+        delay(100);
+        return;
+    }
+
+    prev_dir_x = ucx;
+    prev_dir_y = ucy;
+
+    // Clear render buffer for next pass
+    memset(ssd1306_buf, 0, sizeof(ssd1306_buf));
+
+    // Time to sleep!
+    cli(); // Disable interrupts checking sleep status
+    if (millis() >= sleep_at) {
+
+        // Render an empty screen
+        // (Turns screen "off")
+        ssd1306_display();
+
+        sleeping = true;
+
+        sei();
+        return;
+    }
+    sei();
 
     m3_vec dir = { -(int8_t) roundf(127 * ucx), 0, (int8_t) roundf(127 * ucy) };
     m3_vec up = { 0, 0, 1 };
@@ -255,7 +291,6 @@ void loop() {
     m3_vec_normalize(&up);
 
     m3_quat quat = m3_vec_to_quat(dir, up);
-    // m3_quat quat = { 0, 127 * ucx, 0, 127 * ucy };
 
     m3_quat_normalize(&quat);
 
@@ -272,7 +307,6 @@ void loop() {
 
     m3_quat_rotate(&quat, live_camera_inclination);
     m3_ocamera_pivot(&camera, quat);
-    memset(ssd1306_buf, 0, sizeof(ssd1306_buf));
     m3_ocamera_render(&camera, &scene, ssd1306_buf, SCREEN_WIDTH, SCREEN_HEIGHT, M3_ORIENTATION_VL | M3_ORIENTATION_HFLIP);
     ssd1306_display();
 }
@@ -345,3 +379,7 @@ void ssd1306_command(const uint8_t *c, uint8_t n) {
     }
 }
 
+void keepalive() {
+    sleep_at = millis() + SLEEP_TIMEOUT;
+    sleeping = false;
+}
