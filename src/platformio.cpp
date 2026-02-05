@@ -1,66 +1,81 @@
 // Entry point for platform.io
-
 #include "micro3d.h"
 #include <Arduino.h>
-#include <Adafruit_SSD1306.h>
 #include <Adafruit_QMC5883P.h>
+#include <SPI.h>
 
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT 64 // OLED display height, in pixels
 
 // Declaration for SSD1306 display connected using software SPI (default case):
-#define OLED_MOSI   9
-#define OLED_CLK   10
-#define OLED_DC    11
-#define OLED_CS    12
-#define OLED_RESET 13
-Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT,
-  OLED_MOSI, OLED_CLK, OLED_DC, OLED_RESET, OLED_CS);
+// #define OLED_MOSI  9
+// #define OLED_CLK   10
+// #define OLED_DC    11
+// #define OLED_CS    8
+// #define OLED_RESET 13
+// Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT,
+//   OLED_MOSI, OLED_CLK, OLED_DC, OLED_RESET, OLED_CS);
 Adafruit_QMC5883P mag;
+
+#define OLED_MOSI  11
+#define OLED_CLK   13
+#define OLED_DC    8
+#define OLED_CS    10
+#define OLED_RESET 9
 
 // Magnetometer calibration data
 // Stored in format min(x, y, z), max(x, y, z)
 float mcal[6] = { -0.31, -0.61, -0.59, 0.82, 0.26, 0.35 };
 
 m3_scene_t scene;
-m3_ocamera_handle_t camera;
+m3_ocamera_t camera;
 
 m3_object_handle_t arrow;
 m3_object_handle_t fletching;
 m3_object_handle_t point;
 m3_segment_handle_t tip;
 
-m3_quat camera_inclination = { -1, 0, 0, 5 };
+// Determine how the camera looks down on the arrow
+m3_quat camera_inclination = { 1, 0, 0, 5 };
 
+uint8_t ssd1306_buf[SCREEN_WIDTH * SCREEN_HEIGHT / 8];
+SPISettings spiSettings(8000000UL, MSBFIRST, SPI_MODE0);
+
+// Setup 3d scene
 void setup_scene();
+
+void ssd1306_begin();   // Initialize the ssd1306 device
+void ssd1306_display(); // Forward the contents of `ssd1306_buf` to the display
+void ssd1306_command(const uint8_t *c, uint8_t n); // Send a list of commands to the display
 
 void setup() {
     Serial.begin(115200);
 
     setup_scene();
+    ssd1306_begin();
 
     // Prepare output display
-    if(!display.begin(SSD1306_SWITCHCAPVCC)) {
-        Serial.println(F("SSD1306 allocation failed"));
-        while (1);
-    }
+    // if(!display.begin(SSD1306_SWITCHCAPVCC)) {
+    //     Serial.println(F("SSD1306 allocation failed"));
+    //     while (1);
+    // }
 
-    Serial.println("Successfully allocated SSD1306");
+    // Serial.println("Successfully allocated SSD1306");
 
     // Prepare magnetometer
-    // while (!mag.begin()) {
-    //     Serial.println("Failed to find QMC5883L chip!");
-    //     delay(1000);
-    // }
+    while (!mag.begin()) {
+        Serial.println("Failed to find QMC5883L chip!");
+        delay(1000);
+    }
     Serial.println("Found QMC5883L!");
 
     // Setup magnetometer
-    // mag.setMode(QMC5883P_MODE_NORMAL);
-    // mag.setODR(QMC5883P_ODR_50HZ);
-    // mag.setOSR(QMC5883P_OSR_4);
-    // mag.setDSR(QMC5883P_DSR_2);
-    // mag.setRange(QMC5883P_RANGE_2G);
-    // mag.setSetResetMode(QMC5883P_SETRESET_ON);
+    mag.setMode(QMC5883P_MODE_NORMAL);
+    mag.setODR(QMC5883P_ODR_50HZ);
+    mag.setOSR(QMC5883P_OSR_4);
+    mag.setDSR(QMC5883P_DSR_2);
+    mag.setRange(QMC5883P_RANGE_2G);
+    mag.setSetResetMode(QMC5883P_SETRESET_ON);
 }
 
 m3_object_t scene_objects[3];
@@ -83,9 +98,9 @@ void setup_scene() {
     );
 
     // Create camera
-    camera = m3_ocamera_create_d();
-    m3_ocamera_resize(camera, 32, 16);
-    m3_ocamera_position(camera, (m3_vec){ 1, 0, 0 });
+    m3_ocamera_create_s(&camera);
+    m3_ocamera_resize(&camera, 32, 16);
+    m3_ocamera_position(&camera, (m3_vec){ 1, 0, 0 });
 
     m3_quat_normalize(&camera_inclination);
 
@@ -219,21 +234,21 @@ void setup_scene() {
 void loop() {
 
     // Get x/y rotation 
-    // float x, y, z;
-    // delay(2);
-    // if (!mag.getGaussField(&x, &y, &z)) return;
+    float x, y, z;
+    delay(2);
+    if (!mag.getGaussField(&x, &y, &z)) return;
 
-    // x = 2 * (x - mcal[0]) / (mcal[3] - mcal[0]) - 1;
-    // y = 2 * (y - mcal[1]) / (mcal[4] - mcal[1]) - 1;
+    x = 2 * (x - mcal[0]) / (mcal[3] - mcal[0]) - 1;
+    y = 2 * (y - mcal[1]) / (mcal[4] - mcal[1]) - 1;
 
-    // float mag = sqrt(x*x + y*y);
-    // float ucx = x / mag;
-    // float ucy = y / mag;
+    float mag = sqrt(x*x + y*y);
+    float ucx = x / mag;
+    float ucy = y / mag;
 
-    float ucy = sin(millis() / 1000.0);
-    float ucx = cos(millis() / 1000.0);
+    // float ucy = sin(millis() / 1000.0);
+    // float ucx = cos(millis() / 1000.0);
 
-    m3_vec dir = { (int8_t) roundf(127 * ucx), 0, (int8_t) roundf(127 * ucy) };
+    m3_vec dir = { -(int8_t) roundf(127 * ucx), 0, (int8_t) roundf(127 * ucy) };
     m3_vec up = { 0, 0, 1 };
 
     m3_vec_normalize(&dir);
@@ -256,11 +271,77 @@ void loop() {
     m3_quat_normalize(&live_camera_inclination);
 
     m3_quat_rotate(&quat, live_camera_inclination);
-    m3_ocamera_pivot(camera, quat);
-
-    display.clearDisplay();
-    m3_ocamera_render(camera, &scene, display.getBuffer(), SCREEN_WIDTH, SCREEN_HEIGHT, M3_ORIENTATION_VL | M3_ORIENTATION_HFLIP);
-    display.display();
-
-    delay(100);
+    m3_ocamera_pivot(&camera, quat);
+    memset(ssd1306_buf, 0, sizeof(ssd1306_buf));
+    m3_ocamera_render(&camera, &scene, ssd1306_buf, SCREEN_WIDTH, SCREEN_HEIGHT, M3_ORIENTATION_VL | M3_ORIENTATION_HFLIP);
+    ssd1306_display();
 }
+
+void ssd1306_begin() {
+    SPI.begin();
+
+    // Setup SPI-related pins
+    pinMode(OLED_DC, OUTPUT);
+    pinMode(OLED_CS, OUTPUT);
+    pinMode(OLED_RESET, OUTPUT);
+    pinMode(OLED_MOSI, OUTPUT);
+    pinMode(OLED_CLK, OUTPUT);
+
+    // Run reset
+    digitalWrite(OLED_RESET, HIGH);
+    delay(1);
+    digitalWrite(OLED_RESET, LOW);
+    delay(10);
+    digitalWrite(OLED_RESET, HIGH);
+
+    SPI.beginTransaction(spiSettings);
+    digitalWrite(OLED_CS, LOW);
+
+    // Initial data required to setup display
+    static const uint8_t PROGMEM init[] = {
+        0xAE, 0xD5, 0x80, 0xA8,
+        SCREEN_HEIGHT - 1,
+        0xD3, 0x00, 0x40, 0x8D, 0x14,
+        0x20, 0x00, 0xA1, 0xC8,
+        0xDA, 0x12, 0x81, 0xCF,
+        0xD9, 0xF1,
+        0xDB, 0x40, 0xA4, 0xA6, 0x2E, 0xAF
+    };
+    ssd1306_command(init, sizeof(init));
+
+    digitalWrite(OLED_CS, HIGH);
+    SPI.endTransaction();
+}
+
+void ssd1306_display() {
+    SPI.beginTransaction(spiSettings);
+    digitalWrite(OLED_CS, LOW);
+
+    // Data required to initiate display transaction
+    static const uint8_t PROGMEM dlist[] = {
+        0x22, 0x00, 0xFF, 0x21,
+        0x0, SCREEN_WIDTH - 1
+    };
+    ssd1306_command(dlist, sizeof(dlist));
+
+    uint16_t count = SCREEN_WIDTH * ((SCREEN_HEIGHT + 7) / 8);
+    uint8_t* ptr = ssd1306_buf;
+
+    digitalWrite(OLED_DC, HIGH); // Data mode
+    while (count--) {
+        SPI.transfer(*ptr++);
+    }
+    
+    digitalWrite(OLED_CS, HIGH);
+    SPI.endTransaction();
+}
+
+void ssd1306_command(const uint8_t *c, uint8_t n) {
+    digitalWrite(OLED_DC, LOW); // Command mode
+
+    // Send each command individually
+    while (n--) {
+        SPI.transfer(pgm_read_byte(c++));
+    }
+}
+

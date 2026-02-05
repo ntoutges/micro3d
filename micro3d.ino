@@ -1,4 +1,6 @@
 #include "src/micro3d.h"
+#define SSD1306_NO_SPLASH
+
 #include <Adafruit_QMC5883P.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
@@ -186,18 +188,18 @@ float max_y = -0.21;
 void loop() {
 
   // Get x/y rotation 
-  // float x, y, z;
-  // delay(2);
-  // if (!mag.getGaussField(&x, &y, &z)) return;
-  // float cx = (x - min_x) / (max_x - min_x) * 2 - 1;
-  // float cy = (y - min_y) / (max_y - min_y) * 2 - 1;
+  float x, y, z;
+  delay(2);
+  if (!mag.getGaussField(&x, &y, &z)) return;
+  float cx = (x - min_x) / (max_x - min_x) * 2 - 1;
+  float cy = (y - min_y) / (max_y - min_y) * 2 - 1;
 
-  // float mag = sqrt(cx*cx + cy*cy);
-  // float ucx = cx / mag;
-  // float ucy = cy / mag;
+  float mag = sqrt(cx*cx + cy*cy);
+  float ucx = cx / mag;
+  float ucy = cy / mag;
 
-  float ucy = sin(millis() / 1000.0);
-  float ucx = cos(millis() / 1000.0);
+  // float ucy = sin(millis() / 1000.0);
+  // float ucx = cos(millis() / 1000.0);
 
   // m3_quat quat = m3_vec_to_quat(rotation, up);
   m3_quat quat = { 0, ucx * 127, 0, ucy * 127 };

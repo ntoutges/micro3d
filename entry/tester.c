@@ -181,7 +181,7 @@ int main() {
             // Rotate arrow by some amount
             // m3_quat quat = { 0, 127 * sin(i * 3.14159 / itts), 0, 127 * cos(i * 3.14159 / itts) };
             m3_vec dir = { 127 * cos(i * 2 * 3.14159 / itts), 0, 127 * sin(i * 2 * 3.14159 / itts) };
-            m3_vec up = { 127 * sin(i * 2 * 3.14159 / itts), 0, -127 * cos(i * 2 * 3.14159 / itts)  };
+            m3_vec up = { 127 * sin(i * 2 * 3.14159 / itts), 10, -127 * cos(i * 2 * 3.14159 / itts)  };
 
             m3_vec_normalize(&dir);
             m3_vec_normalize(&up);
