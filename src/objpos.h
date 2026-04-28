@@ -10,6 +10,7 @@ extern "C" {
 
 #include "types.h"
 #include "transform.h"
+#include "segment.h"
 
 // Useful utility functions for getting the position of some object
 
@@ -37,19 +38,19 @@ m3_pos_object m3_pos_object_get(m3_object_handle_t object);
 /**
  * Get the position of the end of a segment relative to some root
  * @param root      The root position/rotation
- * @param segment   The id of the segment whose final position will be computed
+ * @param segment   The segment whose final position will be computed
  * @returns         The final computed position
  */
-m3_pos_chain m3_pos_segment_get(m3_pos_object root, uint8_t segment);
+m3_pos_chain m3_pos_segment_get(m3_pos_object root, m3_segment_t segment);
 
 /**
  * Get the position of the end of a segment relative to some root after some previous segment
  * @param root      The root position/rotation
- * @param segment   The id of the segment whose final position will be computed
+ * @param segment   The segment whose final position will be computed
  * @param prev      The position of the previous segment
  * @returns         The final computed position
  */
-m3_pos_chain m3_pos_segment_next(m3_pos_object root, uint8_t segment, m3_vec prev);
+m3_pos_chain m3_pos_segment_next(m3_pos_object root, m3_segment_t segment, m3_vec prev);
 
 
 /**

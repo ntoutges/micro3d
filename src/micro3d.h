@@ -9,4 +9,6 @@
 #include "objpos.h"
 #include "raster.h"
 
+#include "types.h"
+
 #endif

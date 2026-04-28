@@ -96,7 +96,7 @@ m3_err_t m3_ocamera_render(
 
         // Get all segments that make up this object
         uint16_t length = m3_object_segment_length(object);
-        uint8_t* buf = m3_object_segment_buf(object);
+        m3_segment_t* buf = m3_object_segment_buf(object);
 
         // Live + Static positions of both current and previous vectors in cameraspace
         m3_pos_chain prev;
@@ -112,8 +112,7 @@ m3_err_t m3_ocamera_render(
             pos = m3_pos_segment_next(root, buf[j], prev.sta);
 
             // Get non-positional segment info
-            m3_segment_handle_t segment = m3_segment_get(scene, buf[j]);
-            bool visible = m3_segment_visibility(segment);
+            bool visible = buf[j].visible;
 
             // Only attempt to render if segment is visible
             if (!visible) continue;

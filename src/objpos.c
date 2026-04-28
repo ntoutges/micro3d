@@ -1,5 +1,7 @@
 #include "objpos.h"
 
+extern m3_segment_t* _m3_segment_deref(m3_segment_handle_t handle);
+
 m3_pos_object m3_pos_object_get(m3_object_handle_t object) {
     if (object.owner == NULL) return (m3_pos_object){ { 0, 0, 0 }, { 0, 0, 0, 127 } }; // Object doesn't exist
 
@@ -30,21 +32,18 @@ m3_pos_object m3_pos_object_get(m3_object_handle_t object) {
 }
 
 // Notice that this is basically an alias to provide a default parameter
-inline m3_pos_chain m3_pos_segment_get(m3_pos_object root, uint8_t segment) {
+inline m3_pos_chain m3_pos_segment_get(m3_pos_object root, m3_segment_t segment) {
     return m3_pos_segment_next(root, segment, root.loc );
 }
 
-m3_pos_chain m3_pos_segment_next(m3_pos_object root, uint8_t segment, m3_vec prev) {
+m3_pos_chain m3_pos_segment_next(m3_pos_object root, m3_segment_t segment, m3_vec prev) {
     if (root.owner == NULL) return (m3_pos_chain){ { 0, 0, 0 }, prev }; // Segment doesn't exist
 
-    // Get the raw segment object
-    m3_segment_t seg = root.owner->seg_buf[segment];
-
     // Extract segment position
-    m3_vec s_pos = { seg.x, seg.y, seg.z };
+    m3_vec s_pos = { segment.x, segment.y, segment.z };
 
     // Add `prev` position to segment for proper clean offset
-    if (!seg.absolute) m3_vec_add(&s_pos, prev);
+    if (!segment.absolute) m3_vec_add(&s_pos, prev);
 
     // Clone static pos to create `live` position
     // Allows `s_pos` to represent clean object-space coordinates

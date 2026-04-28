@@ -1,6 +1,8 @@
 #include "./object.h"
+#include <stdio.h>
 
 extern int16_t _m3_scene_object_avail(m3_scene_handle_t);
+extern m3_segment_t _m3_segment_new();
 
 bool _m3_object_update_segments(m3_object_t* object, uint16_t size);
 uint16_t _m3_object_segments_get_size(m3_object_t* object);
@@ -56,7 +58,7 @@ void m3_object_destroy(m3_object_handle_t* object) {
     obj->_marker = 0;
 
     // Free up object resources
-    free(obj->segments);
+    if (!obj->smem) free(obj->segments);
 
     // Mark object as non-existant
     object->owner = NULL;
@@ -72,7 +74,7 @@ m3_scene_handle_t m3_object_owner(m3_object_handle_t object) {
 
 m3_err_t m3_object_alloc_s(
     m3_object_handle_t object,
-    uint8_t* buf,
+    m3_segment_t* buf,
     uint8_t len
 ) {
     if (!object.owner) return M3_ERR_EXIST_A;
@@ -91,7 +93,7 @@ m3_err_t m3_object_alloc_s(
 
     // Copy as many segments as possible from object's segment list into `buf`
     uint16_t copy_ct = size < st_len ? size : st_len;
-    memcpy(buf, obj->segments, copy_ct * sizeof(uint8_t));
+    memcpy(buf, obj->segments, copy_ct * sizeof(m3_segment_t));
 
     // Update size of segments
     _m3_object_segments_set_size(obj, copy_ct);
@@ -122,13 +124,13 @@ m3_err_t m3_object_free_s(
 
     // Need to reallocate
     if (size != 0) {
-        uint8_t* segments = malloc(sizeof(uint8_t) * size);
+        m3_segment_t* segments = (m3_segment_t*) malloc(sizeof(m3_segment_t) * size);
 
         // Unable to allocate space for segments
         if (!segments) return M3_ERR_ALLOC;
 
         // Transfer all segments references to `segments`
-        memcpy(segments, obj->segments, sizeof(uint8_t) * size);
+        memcpy(segments, obj->segments, sizeof(m3_segment_t) * size);
 
         // Update pointer
         obj->segments = segments;
@@ -149,16 +151,16 @@ m3_err_t m3_object_free_s(
 
 m3_object_ires_t m3_object_push_segment(
     m3_object_handle_t object,
-    m3_segment_handle_t segment
+    m3_segment_handle_t* segment
 ) {
     if (!object.owner) return ((m3_object_ires_t) { 0, M3_ERR_EXIST_A });
-    if (segment.owner != object.owner) return ((m3_object_ires_t) { 0, M3_ERR_EXIST_B });
 
     // Get object
     m3_object_t* obj = &(object.owner->obj_buf[object.id]);
 
     // Attempt to increase size of segments list
     uint16_t size = _m3_object_segments_get_size(obj);
+
     bool expanded = _m3_object_update_segments(
         obj,
         size + 1
@@ -166,18 +168,25 @@ m3_object_ires_t m3_object_push_segment(
     if (!expanded) return ((m3_object_ires_t) { 0, M3_ERR_ALLOC });
 
     // Insert segment into segments list
-    obj->segments[size] = segment.id;
+    obj->segments[size] = _m3_segment_new();
+
+    // Fill in segment handle container
+    if (segment != NULL) {
+        *segment = (m3_segment_handle_t) {
+            .id = size,
+            .owner = object
+        };
+    }
 
     return ((m3_object_ires_t) { size, M3_SUCCESS });
 }
 
 m3_object_ires_t m3_object_replace_segment(
     m3_object_handle_t object,
-    m3_segment_handle_t segment,
-    uint8_t index
+    uint8_t index,
+    m3_segment_handle_t* segment
 ) {
     if (!object.owner) return ((m3_object_ires_t) { 0, M3_ERR_EXIST_A });
-    if (segment.owner != object.owner) return ((m3_object_ires_t) { 0, M3_ERR_EXIST_B });
 
     // Get object
     m3_object_t* obj = &(object.owner->obj_buf[object.id]);
@@ -187,18 +196,25 @@ m3_object_ires_t m3_object_replace_segment(
     if (index >= size) return ((m3_object_ires_t) { 0, M3_ERR_BOUNDS });
 
     // Perform replacement
-    obj->segments[index] = segment.id;
+    obj->segments[size] = _m3_segment_new();
+
+    // Fill in segment handle container, if desired
+    if (segment != NULL) {
+        *segment = (m3_segment_handle_t) {
+            .id = size,
+            .owner = object
+        };
+    }
     
     return ((m3_object_ires_t) { index, M3_SUCCESS });
 }
 
 m3_object_ires_t m3_object_insert_segment(
     m3_object_handle_t object,
-    m3_segment_handle_t segment,
-    uint8_t index
+    uint8_t index,
+    m3_segment_handle_t* segment
 ) {
     if (!object.owner) return ((m3_object_ires_t) { 0, M3_ERR_EXIST_A });
-    if (segment.owner != object.owner) return ((m3_object_ires_t) { 0, M3_ERR_EXIST_B });
 
     // Get object
     m3_object_t* obj = &(object.owner->obj_buf[object.id]);
@@ -215,10 +231,18 @@ m3_object_ires_t m3_object_insert_segment(
     if (!expanded) return ((m3_object_ires_t) { 0, M3_ERR_ALLOC });
 
     // Ripple move all elements to the right by 1 place
-    memmove(obj->segments + index + 1, obj->segments + index, (size - index) * sizeof(uint8_t));
+    memmove(obj->segments + index + 1, obj->segments + index, (size - index) * sizeof(m3_segment_t));
 
     // Insert element into vacated location at `index`
-    obj->segments[index] = segment.id;
+    obj->segments[size] = _m3_segment_new();
+
+    // Fill in segment handle container, if desired
+    if (segment != NULL) {
+        *segment = (m3_segment_handle_t) {
+            .id = size,
+            .owner = object
+        };
+    }
 
     return ((m3_object_ires_t) { index, M3_SUCCESS });
 }
@@ -237,7 +261,7 @@ m3_err_t m3_object_remove_segment(
     if (index >= size) return M3_ERR_BOUNDS;
 
     // Ripple move all elements to the left by 1 place
-    memmove(obj->segments + index, obj->segments + index + 1, (size - index) * sizeof(uint8_t));
+    memmove(obj->segments + index, obj->segments + index + 1, (size - index) * sizeof(m3_segment_t));
 
     // Shrink desired size
     _m3_object_update_segments(obj, size - 1);
@@ -252,12 +276,14 @@ m3_err_t m3_object_clear(m3_object_handle_t object) {
     m3_object_t* obj = &(object.owner->obj_buf[object.id]);
 
     // Free any allocated array
-    free(obj->segments);
+    if (!obj->smem) {
+        free(obj->segments);
+        obj->segments = NULL;
+    }
 
     // Reset arraylist holding segments
     obj->scap = 0b111; // Special case -> capacity = 0
     obj->soffset = 0; // 0 - 0 = size
-    obj->segments = NULL;
 
     return M3_SUCCESS;
 }
@@ -282,7 +308,7 @@ bool _m3_object_update_segments(m3_object_t* object, uint16_t size) {
     if (new_cap != curr_cap && !object->smem) {
 
         // Attempt to allocate space for the larger/smaller segment list
-        uint8_t* segments = (uint8_t*) realloc(object->segments, new_cap * sizeof(uint8_t));
+        m3_segment_t* segments = (m3_segment_t*) realloc(object->segments, new_cap * sizeof(m3_segment_t));
         if (segments == NULL) return false;
 
         // Update pointer to new memory region
@@ -404,7 +430,7 @@ uint16_t m3_object_segment_length(m3_object_handle_t object) {
     return _m3_object_segments_get_size(obj);
 }
 
-uint8_t* m3_object_segment_buf(m3_object_handle_t object) {
+m3_segment_t* m3_object_segment_buf(m3_object_handle_t object) {
     if (object.owner == NULL) return NULL;
 
     // Get object
@@ -414,17 +440,17 @@ uint8_t* m3_object_segment_buf(m3_object_handle_t object) {
 }
 
 m3_segment_handle_t m3_object_segment_get(m3_object_handle_t object, uint8_t index) {
-    if (!object.owner) return (m3_segment_handle_t){ NULL, 0 };
+    if (!object.owner) return (m3_segment_handle_t){ .owner = { .owner = NULL, .id = 0 }, .id = 0 };
 
     // Get object
     m3_object_t* obj = &(object.owner->obj_buf[object.id]);
 
     uint16_t size = _m3_object_segments_get_size(obj);
-    if (index >= size) return (m3_segment_handle_t){ NULL, 0 }; // Invalid segment
+    if (index >= size) return (m3_segment_handle_t){ .owner = { .owner = NULL, .id = 0 }, .id = 0 }; // Invalid segment
 
     return (m3_segment_handle_t){
-        object.owner,
-        obj->segments[index]
+        .owner = object,
+        .id = index
     };
 }
 

@@ -36,7 +36,7 @@ typedef struct m3_segment_t {
 
     uint8_t unused: 1;
 
-    // Always true: Marks a slot in the scene segment heap as occupied
+    // Always true: Marks a slot in the object segment heap as occupied
     uint8_t _marker: 1;
 } m3_segment_t;
 
@@ -67,33 +67,25 @@ typedef struct m3_object_t {
 
     uint8_t soffset; // Offset from capacity, where `size = 2**scap - soffset`
 
-    uint8_t* segments; // Segment buffer; Dynamically allocated
+    m3_segment_t* segments; // Segment buffer
 } m3_object_t;
 
 typedef struct m3_scene_t {
-    
-    // Size of the given buffers. If 0: buffer holds 256 entries
-    uint8_t seg_size;
-    uint8_t obj_size;
-
-    // Segment memory; _UP TO_ 256 entries
-    m3_segment_t* seg_buf;
-
-    // Object memory; _UP TO_ 256 entries
-    m3_object_t* obj_buf;
+    uint8_t obj_size; // Size of the object buffers. If 0: buffer holds 256 entries
+    m3_object_t* obj_buf; // Object memory; _UP TO_ 256 entries
 } m3_scene_t;
 
 typedef m3_scene_t* m3_scene_handle_t;
-
-typedef struct m3_segment_handle_t {
-    m3_scene_handle_t owner;
-    uint8_t id;
-} m3_segment_handle_t;
 
 typedef struct m3_object_handle_t {
     m3_scene_handle_t owner;
     uint8_t id;
 } m3_object_handle_t;
+
+typedef struct m3_segment_handle_t {
+    m3_object_handle_t owner;
+    uint8_t id;
+} m3_segment_handle_t;
 
 
 // Error definitions

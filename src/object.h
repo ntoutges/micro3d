@@ -6,6 +6,7 @@
 
 #include "./types.h"
 #include "./scene.h"
+#include "segment.h"
 
 // -------- BOOK-KEEPING FUNCTIONS --------
 
@@ -41,7 +42,7 @@ m3_scene_handle_t m3_object_owner(m3_object_handle_t object);
 // -------- OBJECT/SEGMENT MODIFICATION --------
 
 /**
- * Use a static segment buffer to store segment references within an object
+ * Use a static segment buffer to store segments within an object
  * This will copy as many segments as possible from `buf` into the object's segment list
  * @param object    The handle of the object to allocate segments for
  * @param buf       The buffer to use for segments
@@ -55,7 +56,7 @@ m3_scene_handle_t m3_object_owner(m3_object_handle_t object);
  */
 m3_err_t m3_object_alloc_s(
     m3_object_handle_t object,
-    uint8_t* buf,
+    m3_segment_t* buf,
     uint8_t len
 );
 
@@ -80,66 +81,84 @@ typedef struct m3_object_ires_t {
 } m3_object_ires_t;
 
 /**
- * Add a segment at the end of an object's segment list
+ * Create a segment at the end of an object's segment list
  * @param object    The handle of the object to add the segment to
- * @param segment   The handle of the segment to add to the object
+ * @param segment   The container to store the handle that references the created segment.
+ * If the segment could not be created, this will _not_ be populated.
+ * Pass in a value of `NULL` if the handle is undesired
  * @returns         The index of the new segment, and whether the operation was successful
  * On failure, the original object/segment are unmodified
  * M3_SUCCESS: Success
  * M3_ERR_ALLOC: Unable to allocate space for the new segment
  * M3_ERR_EXIST_A: The object does not exist
- * M3_ERR_EXIST_B: The segment does not exist, or has a different owner
  */
 m3_object_ires_t m3_object_push_segment(
     m3_object_handle_t object,
-    m3_segment_handle_t segment
+    m3_segment_handle_t* segment
 );
 
 /**
- * Replace the segment at the given index in an object's segment list
+ * Create a segment in an object, and replace some preexisting
+ * segment at the given indexwith the new segment
+ * Note that this will invalidate any preexisting handles to all segments at the given index,
+ * however (for memory and speed concerns) the handles will not reflect this.
+ * 
  * @param object    The handle of the object to add the segment to
- * @param segment   The handle of the segment to add to the object
  * @param index     The location of the original segment to replace
+ * This index must reference a created segment index, otherwise it will throw with M3_ERR_BOUNDS
+ * @param segment   The container to store the handle that references the created segment.
+ * If the segment could not be created, this will _not_ be populated.
+ * Pass in a value of `NULL` if the handle is undesired
  * @returns         The index of the new segment, and whether the operation was successful
  * On failure, the original object/segment are unmodified
  * M3_SUCCESS: Success
  * M3_ERR_EXIST_A: The object does not exist
- * M3_ERR_EXIST_B: The segment does not exist, or has a different owner
  * M3_ERR_BOUNDS: The given index is invalid
  */
 m3_object_ires_t m3_object_replace_segment(
     m3_object_handle_t object,
-    m3_segment_handle_t segment,
-    uint8_t index
+    uint8_t index,
+    m3_segment_handle_t* segment
 );
 
 /**
- * Ripple insert a segment into an object's segment list, offsetting all other segments to make room
+ * Create a segment in an object, and ripple insert into an object's segment list, offsetting
+ * all other segments to make roomsome preexisting
+ * Note that this will invalidate any handles to all segments at or after the
+ * given index, however (for memory and speed concerns) the handles will not
+ * reflect this.
+ * 
  * @param object    The handle of the object to add the segment to
- * @param segment   The handle of the segment to add to the object
- * @param index     The location of the original segment to insert at
+ * @param index     The location of the original segment to replace
+ * This index must reference a created segment index, otherwise it will throw with M3_ERR_BOUNDS
+ * @param segment   The container to store the handle that references the created segment.
+ * If the segment could not be created, this will _not_ be populated.
+ * Pass in a value of `NULL` if the handle is undesired
  * @returns         The index of the new segment, and whether the operation was successful
  * On failure, the original object/segment are unmodified
  * M3_SUCCESS: Success
  * M3_ERR_ALLOC: Unable to allocate space for the new segment
  * M3_ERR_EXIST_A: The object does not exist
- * M3_ERR_EXIST_B: The segment does not exist
  * M3_ERR_BOUNDS: The given index is invalid
  */
 m3_object_ires_t m3_object_insert_segment(
     m3_object_handle_t object,
-    m3_segment_handle_t segment,
-    uint8_t index
+    uint8_t index,
+    m3_segment_handle_t* segment
 );
 
 /**
- * Remove the segment at the given index
+ * Remove the segment at the given index, and ripple move all following
+ * segments back to fill the gap.
+ * Note that this will invalidate any handles to all segments at or after the
+ * given index, however (for memory and speed concerns) the handles will not
+ * reflect this.
+ * 
  * @param object    The handle of the object to add the segment to
- * @param index     The handle of the segment to add to the object
+ * @param index     The index of the segment to remove from the object
  * @returns         Whether the operation was successful
  * On failure, the original object/segment are unmodified
  * M3_SUCCESS: Success
- * M3_ERR_ALLOC: Unable to allocate space for the new segment
  * M3_ERR_EXIST_A: The object does not exist
  * M3_ERR_BOUNDS: The given index is invalid
  */
@@ -149,7 +168,11 @@ m3_err_t m3_object_remove_segment(
 );
 
 /**
- * Clear all segment data associated with an object
+ * Clear all segment data associated with an object.
+ * Note that ths will invalidate all handles to all segments in this
+ * object, however (for memory and speed concenrs) the handles will
+ * not reflect this.
+ * 
  * @param object    The handle of the object to clear
  * @returns         Whether the operation was successful
  * On failure, the original object/segment are unmodified
@@ -169,12 +192,12 @@ m3_err_t m3_object_clear(m3_object_handle_t object);
 uint16_t m3_object_segment_length(m3_object_handle_t object);
 
 /**
- * Get the raw buffer of segment ids an object has access to. This becomes invalid as soon as the object's segment list is modified
+ * Get the raw buffer of segment an object has access to. This becomes invalid as soon as the object's segment list is modified
  * @param object    The handle of the object to read
- * @returns         The buffer holding the segment ids
+ * @returns         The buffer holding the segments
  * Returns nullptr if object doesn't exist
  */
-uint8_t* m3_object_segment_buf(m3_object_handle_t object);
+m3_segment_t* m3_object_segment_buf(m3_object_handle_t object);
 
 /**
  * Get the handle of some segment
