@@ -110,12 +110,29 @@ inline bool _m3_raster_in_bounds(int16_t x, int16_t y, uint8_t width, uint8_t he
 
 inline bool _m3_raster_color_write(int16_t x, int16_t y, uint8_t color) {
     switch (color) {
-        case M3_COLOR_FULL:
-            return true; // Every pixel is set
-        case M3_COLOR_DIM:
-            return (x ^ y) % 2 == 0; // Every _OTHER_ pixel is set
-        case M3_COLOR_DARK:
-            return (x ^ y) % 4 == 0; // Every _4th_ pixel is set
+        case M3_COLOR_FULL: // Every pixel is set
+            // +--+
+            // |::|
+            // +--+
+            return true;
+        case M3_COLOR_DIM: // Every _OTHER_ pixel is set
+            // +----+
+            // |::  |
+            // |  ::|
+            // +----+
+            return x % 2 == y % 2;
+        case M3_COLOR_DARK: { // Every _4th_ pixel is set
+            // +--------+
+            // |::      |
+            // |    ::  |
+            // |  ::    |
+            // |      ::|
+            // +--------+
+            uint8_t x_mod = x % 4;
+            uint8_t y_mod = y % 4;
+
+            return (x_mod == 0 && y_mod == 0) || (x_mod == 1 && y_mod == 2) || (x_mod == 2 && y_mod == 1) || (x_mod == 3 && y_mod == 3);
+        }
     }
 
     return false; // HOW DID YOU GET HERE!?

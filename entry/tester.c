@@ -86,32 +86,32 @@ int main() {
     m3_segment_offset(so, (m3_vec) { .x = -2, .y = -2, .z = -2 });
     m3_segment_color(so, M3_COLOR_INVISIBLE);
 
-    m3_segment_offset(s0, (m3_vec) { .x = 4, .y = 0, .z = 0 });
-    m3_segment_color(s0, M3_COLOR_DIM);
-    m3_segment_offset(s1, (m3_vec) { .x = 0, .y = 4, .z = 0 });
-    m3_segment_color(s1, M3_COLOR_DIM);
-    m3_segment_offset(s2, (m3_vec) { .x = -4, .y = 0, .z = 0 });
-    m3_segment_color(s2, M3_COLOR_DIM);
-    m3_segment_offset(s3, (m3_vec) { .x = 0, .y = -4, .z = 0 });
-    m3_segment_color(s3, M3_COLOR_DIM);
+    // m3_segment_offset(s0, (m3_vec) { .x = 4, .y = 0, .z = 0 });
+    // m3_segment_color(s0, M3_COLOR_DIM);
+    // m3_segment_offset(s1, (m3_vec) { .x = 0, .y = 4, .z = 0 });
+    // m3_segment_color(s1, M3_COLOR_DIM);
+    // m3_segment_offset(s2, (m3_vec) { .x = -4, .y = 0, .z = 0 });
+    // m3_segment_color(s2, M3_COLOR_DIM);
+    // m3_segment_offset(s3, (m3_vec) { .x = 0, .y = -4, .z = 0 });
+    // m3_segment_color(s3, M3_COLOR_DIM);
 
-    m3_segment_offset(s4, (m3_vec) { .x = 0, .y = 0, .z = 4 });
+    // m3_segment_offset(s4, (m3_vec) { .x = 0, .y = 0, .z = 4 });
     m3_segment_offset(s5, (m3_vec) { .x = 4, .y = 0, .z = 0 });
     m3_segment_offset(s6, (m3_vec) { .x = 0, .y = 4, .z = 0 });
     m3_segment_offset(s7, (m3_vec) { .x = -4, .y = 0, .z = 0 });
     m3_segment_offset(s8, (m3_vec) { .x = 0, .y = -4, .z = 0 });
 
-    m3_segment_offset(sm0, (m3_vec) { .x = 4, .y = 0, .z = 0 });
-    m3_segment_color(sm0, M3_COLOR_INVISIBLE);
-    m3_segment_offset(s9, (m3_vec) { .x = 0, .y = 0, .z = -4 });
+    // m3_segment_offset(sm0, (m3_vec) { .x = 4, .y = 0, .z = 0 });
+    // m3_segment_color(sm0, M3_COLOR_INVISIBLE);
+    // m3_segment_offset(s9, (m3_vec) { .x = 0, .y = 0, .z = -4 });
 
-    m3_segment_offset(sm1, (m3_vec) { .x = 0, .y = 4, .z = 0 });
-    m3_segment_color(sm1, M3_COLOR_INVISIBLE);
-    m3_segment_offset(s10, (m3_vec) { .x = 0, .y = 0, .z = 4 });
+    // m3_segment_offset(sm1, (m3_vec) { .x = 0, .y = 4, .z = 0 });
+    // m3_segment_color(sm1, M3_COLOR_INVISIBLE);
+    // m3_segment_offset(s10, (m3_vec) { .x = 0, .y = 0, .z = 4 });
 
-    m3_segment_offset(sm2, (m3_vec) { .x = -4, .y = 0, .z = 0 });
-    m3_segment_color(sm2, M3_COLOR_INVISIBLE);
-    m3_segment_offset(s11, (m3_vec) { .x = 0, .y = 0, .z = -4 });
+    // m3_segment_offset(sm2, (m3_vec) { .x = -4, .y = 0, .z = 0 });
+    // m3_segment_color(sm2, M3_COLOR_INVISIBLE);
+    // m3_segment_offset(s11, (m3_vec) { .x = 0, .y = 0, .z = -4 });
 
     m3_segment_offset(t0, (m3_vec) { .x = 7, .y = 0, .z = 0 });
     m3_segment_absolute(t0, true);
