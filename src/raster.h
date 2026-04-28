@@ -26,6 +26,8 @@ typedef struct m3_bb {
  * @param y0        The first y-coorinate of the line to draw
  * @param x1        The second x-coorinate of the line to draw
  * @param y1        The second y-coorinate of the line to draw
+ * @param color     The coloration to apply when rendering the line
+ * Given as a 2-bit `M3_COLOR_` constant
  * @param orientation   The orientation mode to render the buffer. Union multiple compatible options for combinations
  * M3_ORIENTATION_HL: Target format is inferred to be `target[y][x/8]:x%8`
  * M3_ORIENTATION_VL: Target format is inferred to be `target[y/8][x]:y%8` (ex: SSD1306 format)
@@ -40,6 +42,7 @@ void m3_raster_line(
     int16_t y0,
     int16_t x1,
     int16_t y1,
+    uint8_t color,
     uint8_t orientation
 );
 

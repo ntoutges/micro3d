@@ -112,10 +112,10 @@ m3_err_t m3_ocamera_render(
             pos = m3_pos_segment_next(root, buf[j], prev.sta);
 
             // Get non-positional segment info
-            bool visible = buf[j].visible;
+            uint8_t color = buf[j].color;
 
             // Only attempt to render if segment is visible
-            if (!visible) continue;
+            if (color == M3_COLOR_INVISIBLE) continue;
 
             m3_bb bbox = m3_raster_bb(
                 pos.live.x,
@@ -153,6 +153,7 @@ m3_err_t m3_ocamera_render(
                 y0 + screen_offset_y,
                 x1 + screen_offset_x,
                 y1 + screen_offset_y,
+                color,
                 orientation
             );
         }

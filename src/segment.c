@@ -11,7 +11,7 @@ m3_segment_t _m3_segment_new() {
         .x = 0,
         .y = 0,
         .z = 0,
-        .visible = 1,
+        .color = M3_COLOR_FULL,
         .absolute = 0,
         ._marker = 1
     };
@@ -44,14 +44,18 @@ m3_err_t m3_segment_offset(
     return M3_SUCCESS;
 }
 
-m3_err_t m3_segment_visible(m3_segment_handle_t handle, bool visible) {
+m3_err_t m3_segment_color(
+    m3_segment_handle_t handle,
+    uint8_t color
+) {
     if (handle.owner.owner == NULL) return M3_ERR_EXIST_A; // Segment doesn't exist
+
+    // Invalid color; Reset to invisble
+    if (color > M3_COLOR_FULL) color = M3_COLOR_INVISIBLE;
 
     // Update visibility of segment
     m3_segment_t* segment = _m3_segment_deref(handle);
-    segment->visible = visible ? 1 : 0;
-
-    printf("(%d) visible: %d\n", handle.id, segment->visible);
+    segment->color = color;
 
     // Success!
     return M3_SUCCESS;
@@ -71,9 +75,9 @@ m3_err_t m3_segment_absolute(
     return M3_SUCCESS;
 }
 
-bool m3_segment_visibility(m3_segment_handle_t handle) {
+uint8_t m3_segment_get_color(m3_segment_handle_t handle) {
     if (handle.owner.owner == NULL) return false;
-    return _m3_segment_deref(handle)->visible;
+    return _m3_segment_deref(handle)->color;
 }
 
 m3_object_handle_t m3_segment_owner(m3_segment_handle_t segment) {

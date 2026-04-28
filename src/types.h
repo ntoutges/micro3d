@@ -28,13 +28,10 @@ typedef struct m3_segment_t {
     int8_t y: 4;
     int8_t z: 4;
 
-    // If 0: This segment is purely for positional movements
-    uint8_t visible: 1;
+    uint8_t color: 2;
 
     // If 1: This segment is positioned relative to its parent object, rather than the previous segment
     uint8_t absolute: 1;
-
-    uint8_t unused: 1;
 
     // Always true: Marks a slot in the object segment heap as occupied
     uint8_t _marker: 1;
@@ -108,5 +105,10 @@ typedef enum m3_err_t {
 #define M3_RLOCK_NONE 0b000 // All rotation allowed
 #define M3_RLOCK_X    0b001 // Ignore rotation about the x-axis
 #define M3_RLOCK_Y    0b010 // Ignore rotation about the y-axis
+
+#define M3_COLOR_INVISIBLE 0b00 // Transparent (not rendered)
+#define M3_COLOR_DARK      0b01 // Render in black (overwrite other objects)
+#define M3_COLOR_DIM       0b10 // Render as dashed
+#define M3_COLOR_FULL      0b11 // Render normally
 
 #endif

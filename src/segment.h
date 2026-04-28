@@ -42,15 +42,16 @@ m3_err_t m3_segment_offset(
 /**
  * Set whether this segment is visible or not
  * @param segment   The handle of the segment to modify
- * @param visible   `true` to mark this segment as visible. `false` for purely positioning
+ * @param color     The color to mark this segment. Given as an `M3_COLOR_` constant (2-bit value)
+ * If invalid: this will mark the segment as invisible (M3_COLOR_INVISIBLE)
  * @returns         Whether the operation was successful
  * On failure, the original segment is unmodified
  * M3_SUCCESS: Success
  * M3_ERR_EXIST_A: The segment does not exist
  */
-m3_err_t m3_segment_visible(
+m3_err_t m3_segment_color(
     m3_segment_handle_t handle,
-    bool visible
+    uint8_t color
 );
 
 /**
@@ -70,11 +71,11 @@ m3_err_t m3_segment_absolute(
 // -------- GETTERS --------
 
 /**
- * Get whether this segment is visible or not
+ * Get this segment's coloring
  * @param segment   The handle of the segment to get the visibility state of
- * @returns         Whether the segment is visible. If the segment does not exist, a value of `false` is returned
+ * @returns         The segment's color. Given as an `M3_COLOR_` constant (a 2-bit value)
  */
-bool m3_segment_visibility(m3_segment_handle_t handle);
+uint8_t m3_segment_get_color(m3_segment_handle_t handle);
 
 /**
  * Get the owning object of a segment

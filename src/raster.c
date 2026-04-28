@@ -1,8 +1,9 @@
 #include "raster.h"
 
-void _m3_raster_put_hpx(uint8_t* target, uint8_t width, uint8_t height, uint8_t x, uint8_t y); // Place pixel in format `target[y][x/8]:(x%8)`
-void _m3_raster_put_vpx(uint8_t* target, uint8_t width, uint8_t height, uint8_t x, uint8_t y); // Place pixel in format `target[y/8][x]:(y%8)`
+void _m3_raster_put_hpx(uint8_t* target, uint8_t width, uint8_t height, uint8_t x, uint8_t y, bool write); // Place pixel in format `target[y][x/8]:(x%8)`
+void _m3_raster_put_vpx(uint8_t* target, uint8_t width, uint8_t height, uint8_t x, uint8_t y, bool write); // Place pixel in format `target[y/8][x]:(y%8)`
 bool _m3_raster_in_bounds(int16_t x, int16_t y, uint8_t width, uint8_t height);
+bool _m3_raster_color_write(int16_t x, int16_t y, uint8_t color); // Given the current color, determine if the current pixel should be filled in 
 
 // Integer counter algorithm
 // Premise: Keep track of 2 counters: cx, cy, initially 0
@@ -22,6 +23,7 @@ void m3_raster_line(
     int16_t y0,
     int16_t x1,
     int16_t y1,
+    uint8_t color,
     uint8_t orientation
 ) {
     int8_t sx = x1 > x0 ? 1 : -1;
@@ -36,14 +38,14 @@ void m3_raster_line(
     uint16_t cy = 0;
 
     // Determine `put_?px` method to use
-    void (*put_px)(uint8_t*, uint8_t, uint8_t, uint8_t, uint8_t) = (orientation & M3_ORIENTATION_VL)
+    void (*put_px)(uint8_t*, uint8_t, uint8_t, uint8_t, uint8_t, bool) = (orientation & M3_ORIENTATION_VL)
         ? _m3_raster_put_vpx
         : _m3_raster_put_hpx;
 
     bool in_bounds = _m3_raster_in_bounds(x0, y0, width, height);
 
     // Set initial bit at x0,y0
-    if (in_bounds) put_px(target, width, height, x0, y0);
+    if (in_bounds) put_px(target, width, height, x0, y0, _m3_raster_color_write(x0, y0, color));
 
     // Note: Current position stored in x0,y0
     // Loop until end is reached
@@ -78,30 +80,46 @@ void m3_raster_line(
         }
 
         // Set bit at x0,y0
-        put_px(target, width, height, x0, y0);
+        put_px(target, width, height, x0, y0, _m3_raster_color_write(x0, y0, color));
     }
 }
 
-inline void _m3_raster_put_hpx(uint8_t* target, uint8_t width, uint8_t height, uint8_t x, uint8_t y) {
+inline void _m3_raster_put_hpx(uint8_t* target, uint8_t width, uint8_t height, uint8_t x, uint8_t y, bool write) {
     // Calculate index given width/height
     uint16_t index = (y*width + x) / 8;
     uint8_t mask = 0b00000001 << (x % 8);
 
     // Update target at the specified index/bit
-    target[index] |= mask;
+    if (write) target[index] |= mask;
+    else target[index] &= ~mask;
 }
 
-inline void _m3_raster_put_vpx(uint8_t* target, uint8_t width, uint8_t height, uint8_t x, uint8_t y) {
+inline void _m3_raster_put_vpx(uint8_t* target, uint8_t width, uint8_t height, uint8_t x, uint8_t y, bool write) {
     // Calculate index given width/height
     uint16_t index = ((y / 8)*width + x);
     uint8_t mask = 0b00000001 << (y % 8);
 
     // Update target at the specified index/bit
-    target[index] |= mask;
+    if (write) target[index] |= mask;
+    else target[index] &= ~mask;
 }
 
 inline bool _m3_raster_in_bounds(int16_t x, int16_t y, uint8_t width, uint8_t height) {
     return x >= 0 && y >= 0 && x < width && y < height;
+}
+
+inline bool _m3_raster_color_write(int16_t x, int16_t y, uint8_t color) {
+    switch (color) {
+        case M3_COLOR_FULL:
+            return true; // Every pixel is set
+        case M3_COLOR_DIM:
+            return (x ^ y) % 2 == 0; // Every _OTHER_ pixel is set
+        case M3_COLOR_DARK:
+            return (x ^ y) % 4 == 0; // Every _4th_ pixel is set
+    }
+
+    return false; // HOW DID YOU GET HERE!?
+
 }
 
 m3_bb m3_raster_bb(int8_t x1, int8_t y1, int8_t x2, int8_t y2) {
@@ -134,4 +152,3 @@ bool m3_raster_bb_isect(m3_bb a, m3_bb b) {
         && a.y_max >= b.y_min
         && b.y_max >= a.y_min;
 }
-
