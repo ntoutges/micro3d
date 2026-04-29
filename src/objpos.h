@@ -39,18 +39,20 @@ m3_pos_object m3_pos_object_get(m3_object_handle_t object);
  * Get the position of the end of a segment relative to some root
  * @param root      The root position/rotation
  * @param segment   The segment whose final position will be computed
+ * @param scale     The scale factor to convert from segment space to world space. This is used to allow the small segment offsets to be computed with higher precision
  * @returns         The final computed position
  */
-m3_pos_chain m3_pos_segment_get(m3_pos_object root, m3_segment_t segment);
+m3_pos_chain m3_pos_segment_get(m3_pos_object root, m3_segment_t segment, uint8_t scale);
 
 /**
  * Get the position of the end of a segment relative to some root after some previous segment
  * @param root      The root position/rotation
  * @param segment   The segment whose final position will be computed
  * @param prev      The position of the previous segment
+ * @param scale     The scale factor to convert from segment space to world space. This is used to allow the small segment offsets to be computed with higher precision
  * @returns         The final computed position
  */
-m3_pos_chain m3_pos_segment_next(m3_pos_object root, m3_segment_t segment, m3_vec prev);
+m3_pos_chain m3_pos_segment_next(m3_pos_object root, m3_segment_t segment, m3_vec prev, uint8_t scale);
 
 
 /**

@@ -1,20 +1,24 @@
 #include "./ocamera.h"
 
-m3_ocamera_handle_t m3_ocamera_create_d() {
+m3_ocamera_handle_t m3_ocamera_create_d(uint8_t scale) {
     m3_ocamera_t* camera = (m3_ocamera_t*) malloc(sizeof(m3_ocamera_t));
 
     if (!camera) return NULL;
 
     // Rely on static handler for actual struct instantiation
-    return m3_ocamera_create_s(camera);
+    return m3_ocamera_create_s(camera, scale);
 }
 
-m3_ocamera_handle_t m3_ocamera_create_s(m3_ocamera_t* camera) {
+m3_ocamera_handle_t m3_ocamera_create_s(m3_ocamera_t* camera, uint8_t scale) {
     camera->pos = (m3_vec){ 0, 0, 0 };
     camera->quat = (m3_quat){ 0, 0, 0, 127 };
 
     camera->width = 0;
     camera->height = 0;
+    
+    // Clamp scale to be at least 1 to avoid divide-by-zero errors in rendering code
+    if (scale < 1) scale = 1;
+    camera->scale = scale;
 
     return camera;
 }
@@ -109,7 +113,7 @@ m3_err_t m3_ocamera_render(
             prev = pos;
 
             // Get position of next segment
-            pos = m3_pos_segment_next(root, buf[j], prev.sta);
+            pos = m3_pos_segment_next(root, buf[j], prev.sta, camera->scale);
 
             // Get non-positional segment info
             uint8_t color = buf[j].color;

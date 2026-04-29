@@ -32,15 +32,19 @@ m3_pos_object m3_pos_object_get(m3_object_handle_t object) {
 }
 
 // Notice that this is basically an alias to provide a default parameter
-inline m3_pos_chain m3_pos_segment_get(m3_pos_object root, m3_segment_t segment) {
-    return m3_pos_segment_next(root, segment, root.loc );
+inline m3_pos_chain m3_pos_segment_get(m3_pos_object root, m3_segment_t segment, uint8_t scale) {
+    return m3_pos_segment_next(root, segment, root.loc, scale);
 }
 
-m3_pos_chain m3_pos_segment_next(m3_pos_object root, m3_segment_t segment, m3_vec prev) {
+m3_pos_chain m3_pos_segment_next(m3_pos_object root, m3_segment_t segment, m3_vec prev, uint8_t scale) {
     if (root.owner == NULL) return (m3_pos_chain){ { 0, 0, 0 }, prev }; // Segment doesn't exist
 
     // Extract segment position
-    m3_vec s_pos = { segment.x, segment.y, segment.z };
+    m3_vec s_pos = {
+        segment.x * scale,
+        segment.y * scale,
+        segment.z * scale
+    };
 
     // Add `prev` position to segment for proper clean offset
     if (!segment.absolute) m3_vec_add(&s_pos, prev);

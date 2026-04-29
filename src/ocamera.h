@@ -28,6 +28,10 @@ typedef struct m3_ocamera_t {
     // Width/height of scene for camera to capture
     uint8_t width;
     uint8_t height;
+
+    // Scale factor to convert from segment space to world space
+    // This is used to allow the small segment offsets to be computed with higher precision
+    uint8_t scale;
 } m3_ocamera_t;
 
 typedef m3_ocamera_t* m3_ocamera_handle_t;
@@ -38,17 +42,19 @@ typedef m3_ocamera_t* m3_ocamera_handle_t;
 
 /**
  * Create a camera at (0,0,0) with the specified width/height to capture
- * @returns         A handle to reference this camera later
+ * @param scale The scale factor to convert from segment space to world space. This is used to allow the small segment offsets to be computed with higher precision
+ * @returns     A handle to reference this camera later
  * NULL is returned if the camera could not be created (unable to malloc space for camera data)
  */
-m3_ocamera_handle_t m3_ocamera_create_d();
+m3_ocamera_handle_t m3_ocamera_create_d(uint8_t scale);
 
 /**
  * Create a camera at (0,0,0) with the specified width/height to capture
  * @param camera    The camera struct to populate
+ * @param scale The scale factor to convert from segment space to world space. This is used to allow the small segment offsets to be computed with higher precision
  * @returns         A handle to reference this camera later
  */
-m3_ocamera_handle_t m3_ocamera_create_s(m3_ocamera_t* camera);
+m3_ocamera_handle_t m3_ocamera_create_s(m3_ocamera_t* camera, uint8_t scale);
 
 // -------- CAMERA POSITION --------
 

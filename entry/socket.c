@@ -62,8 +62,8 @@ void setup_scene() {
     );
 
     // Create camera
-    m3_ocamera_create_s(&camera);
-    m3_ocamera_resize(&camera, 32, 16);
+    m3_ocamera_create_s(&camera, 4);
+    m3_ocamera_resize(&camera, 128, 64);
 
     // Create required objects
     geo = m3_object_create(&scene);

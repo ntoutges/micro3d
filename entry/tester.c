@@ -27,7 +27,7 @@ int main() {
     );
 
     // Create camera
-    m3_ocamera_create_s(&camera);
+    m3_ocamera_create_s(&camera, 1);
     m3_ocamera_resize(&camera, 16, 8);
     m3_ocamera_position(&camera, (m3_vec){ 0, 0, 0 });
 

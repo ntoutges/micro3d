@@ -37,7 +37,7 @@ void setup_scene() {
     );
 
     // Create camera
-    m3_ocamera_create_s(&camera);
+    m3_ocamera_create_s(&camera, 1);
     m3_ocamera_resize(&camera, 32, 16);
     m3_ocamera_position(&camera, (m3_vec){ 1, 0, 0 });
 
