@@ -18,7 +18,7 @@ m3_ocamera_t camera;
 
 // Object/segment buffers
 m3_object_t obj_buf[MAX_OBJ_CT];
-m3_segment_t seg_buf[MAX_SEG_CT][MAX_SEG_CT];
+m3_segment_t seg_buf[MAX_OBJ_CT][MAX_SEG_CT];
 
 uint8_t render_buf[SCREEN_WIDTH * SCREEN_HEIGHT / 8 + 1];
 
@@ -48,6 +48,7 @@ static void handler(struct mg_connection *c, int ev, void *ev_data) {
     }
     else if (ev == MG_EV_WS_MSG) {
         struct mg_ws_message *wm = (struct mg_ws_message *) ev_data;
+        printf("RECV: %.*s\n", (int) wm->data.len, wm->data.buf);
 
         // Process message
         for (int i = 0; i < wm->data.len; i++) {
@@ -84,7 +85,7 @@ void setup_scene() {
     // Create the main scene
     m3_scene_create_s(
         &scene,
-        obj_bu
+        obj_buf,
         sizeof(obj_buf) / sizeof(*obj_buf)
     );
 
@@ -150,6 +151,8 @@ void handle_response(uint8_t rid, bool error, uint8_t response) {
     buf[0] = 0x80 | (error ? 0x40 : 0x00) | (rid & 0x3F);
     buf[1] = response;
 
+    printf("%d: (%s) => %d\n", rid, error ? "ERR" : "SUCCESS", response);
+
     broadcast(buf, sizeof(buf));
 }
 
@@ -179,29 +182,208 @@ void handle_cam(void*) {
         handle_response(rid, false, 0);
         return;
     }
+
+    handle_response(rid, true, 19); // Unhandled command
 }
 
 void handle_obj(void*) {
     uint8_t rid = cmd_ogeti(&myCmd, 1, 0xFF);
     const char* subcmd = cmd_ogets(&myCmd, 2, "");
 
-    if (strcmp(subcmd, "create")) {
+    if (strcmp(subcmd, "create") == 0) {
         m3_object_handle_t obj = m3_object_create(&scene);
         
         // Failed to allocate object
-        if (!m3_object_exists(obj));[
-            handle_response(rid, true, 0);
+        if (!m3_object_exists(obj)) {
+            handle_response(rid, true, 20);
             return;
-        ]
+        }
 
         // Allocate segment memory for object based on internal id
-        m3_object_alloc_s(&obj, seg_buf[obj.id], sizeof(*seg_buf) / sizeof(**seg_buf));
+        m3_object_alloc_s(obj, seg_buf[obj.id], sizeof(*seg_buf) / sizeof(**seg_buf));
 
         handle_response(rid, false, obj.id);
         return;
     }
+
+    if (strcmp(subcmd, "parent") == 0) {
+        uint8_t id = cmd_ogeti(&myCmd, 3, 0);
+        uint8_t parent = cmd_ogeti(&myCmd, 4, 0);
+
+        // Ensure object exists
+        m3_object_handle_t obj = m3_scene_object_get(&scene, id);
+        if (!m3_object_exists(obj)) {
+            handle_response(rid, true, 21);
+            return;
+        }
+
+        // Ensure parent exists
+        m3_object_handle_t objp = m3_scene_object_get(&scene, parent);
+        if (!m3_object_exists(objp)) {
+            handle_response(rid, true, 22);
+            return;
+        }
+
+        // Success!
+        m3_object_pset(obj, objp);
+        handle_response(rid, false, 0);
+        return;
+    }
+
+    if (strcmp(subcmd, "pos") == 0) {
+        uint8_t id = cmd_ogeti(&myCmd, 3, 0);
+        int8_t x = cmd_ogeti(&myCmd, 4, 0);
+        int8_t y = cmd_ogeti(&myCmd, 5, 0);
+        int8_t z = cmd_ogeti(&myCmd, 6, 0);
+
+        // Ensure object exists
+        m3_object_handle_t obj = m3_scene_object_get(&scene, id);
+        if (!m3_object_exists(obj)) {
+            handle_response(rid, true, 23);
+            return;
+        }
+
+        // Sucecss!
+        m3_object_position(obj, (m3_vec){ .x = x, .y = y, .z = z });
+        handle_response(rid, false, 0);
+        return;
+    }
+    
+    if (strcmp(subcmd, "pivot") == 0) {
+        uint8_t id = cmd_ogeti(&myCmd, 3, 0);
+        int8_t x = cmd_ogeti(&myCmd, 4, 0);
+        int8_t y = cmd_ogeti(&myCmd, 5, 0);
+        int8_t z = cmd_ogeti(&myCmd, 6, 0);
+        int8_t w = cmd_ogeti(&myCmd, 7, 0);
+
+        // Ensure object exists
+        m3_object_handle_t obj = m3_scene_object_get(&scene, id);
+        if (!m3_object_exists(obj)) {
+            handle_response(rid, true, 24);
+            return;
+        }
+        
+        // Success!
+        m3_object_pivot(obj, (m3_quat){ .x = x, .y = y, .z = z, .w = w });
+        handle_response(rid, false, 0);
+        return;
+    }
+
+    if (strcmp(subcmd, "visible") == 0) {
+        uint8_t id = cmd_ogeti(&myCmd, 3, 0);
+        uint8_t visible = cmd_ogetb(&myCmd, 4, true);
+
+        // Ensure object exists
+        m3_object_handle_t obj = m3_scene_object_get(&scene, id);
+        if (!m3_object_exists(obj)) {
+            handle_response(rid, true, 25);
+            return;
+        }
+
+        // Success!
+        m3_object_visible(obj, visible);
+        handle_response(rid, false, 0);
+        return;
+    }
+
+    if (strcmp(subcmd, "rlock") == 0) {
+        uint8_t id = cmd_ogeti(&myCmd, 3, 0);
+        bool x = cmd_ugetb(&myCmd, "x", false);
+        bool y = cmd_ugetb(&myCmd, "y", false);
+
+        // Ensure object exists
+        m3_object_handle_t obj = m3_scene_object_get(&scene, id);
+        if (!m3_object_exists(obj)) {
+            handle_response(rid, true, 26);
+            return;
+        }
+
+        // Success!
+        m3_object_rlock(obj, (x ? M3_RLOCK_X : 0x00) | (y ? M3_RLOCK_Y : 0x00));
+        handle_response(rid, false, 0);
+        return;
+    }
+
+    if (strcmp(subcmd, "clear") == 0) {
+        uint8_t id = cmd_ogeti(&myCmd, 3, 0);
+
+        // Ensure object exists
+        m3_object_handle_t obj = m3_scene_object_get(&scene, id);
+        if (!m3_object_exists(obj)) {
+            handle_response(rid, true, 27);
+            return;
+        }
+
+        // Success!
+        m3_object_clear(obj);
+        handle_response(rid, false, 0);
+        return;
+    }
+
+    handle_response(rid, true, 39); // Unhandled command
 }
 
 void handle_seg(void*) {
+    uint8_t rid = cmd_ogeti(&myCmd, 1, 0xFF);
+    const char* subcmd = cmd_ogets(&myCmd, 2, "");
+    uint8_t objId = cmd_ogeti(&myCmd, 3, 0);
 
+    // Invalid obejct id
+    m3_object_handle_t obj = m3_scene_object_get(&scene, objId);
+    if (!m3_object_exists(obj)) {
+        handle_response(rid, true, 40);
+        return;
+    }
+
+    if (strcmp(subcmd, "create") == 0) {
+
+        // Attempt to allocate segment
+        m3_segment_handle_t seg;
+        m3_object_ires_t res = m3_object_push_segment(obj, &seg);
+        if (res.err != 0 || !m3_segment_exists(seg)) {
+            handle_response(rid, true, 41);
+            return;
+        }
+
+        // Success!
+        handle_response(rid, false, seg.id);
+        return;
+
+    }
+
+    // Invalid segment id
+    uint8_t id = cmd_ogeti(&myCmd, 4, 0);
+    m3_segment_handle_t seg = m3_object_segment_get(obj, id);
+    if (!m3_segment_exists(seg)) {
+        handle_response(rid, true, 42);
+        return;
+    }
+
+    if (strcmp(subcmd, "offset") == 0) {
+        int8_t x = cmd_ogeti(&myCmd, 5, 0);
+        int8_t y = cmd_ogeti(&myCmd, 6, 0);
+        int8_t z = cmd_ogeti(&myCmd, 7, 0);
+
+        m3_segment_offset(seg, (m3_vec){ .x = x, .y = y, .z = z });
+        handle_response(rid, false, 0);
+        return;
+    }
+
+    if (strcmp(subcmd, "absolute") == 0) {
+        uint8_t absolute = cmd_ogetb(&myCmd, 5, false);
+
+        m3_segment_absolute(seg, absolute);
+        handle_response(rid, false, 0);
+        return;
+    }
+
+    if (strcmp(subcmd, "color") == 0) {
+        uint8_t color = cmd_ogeti(&myCmd, 5, M3_COLOR_FULL);
+
+        m3_segment_color(seg, color);
+        handle_response(rid, false, 0);
+        return;
+    }
+
+    handle_response(rid, true, 59); // Unhandled command
 }
