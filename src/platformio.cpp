@@ -37,8 +37,8 @@ void setup_scene() {
     );
 
     // Create camera
-    m3_ocamera_create_s(&camera, 1);
-    m3_ocamera_resize(&camera, 32, 16);
+    m3_ocamera_create_s(&camera, 4);
+    m3_ocamera_resize(&camera, 128, 64);
     m3_ocamera_position(&camera, (m3_vec){ 1, 0, 0 });
 
     m3_quat_normalize(&camera_inclination);
@@ -104,12 +104,13 @@ void loop() {
     m3_quat_normalize(&quat);
 
     m3_ocamera_pivot(&camera, quat);
-    m3_ocamera_render(&camera, &scene, render_buf, SCREEN_WIDTH, SCREEN_HEIGHT, M3_ORIENTATION_VL | M3_ORIENTATION_HFLIP);
+    m3_ocamera_render(&camera, &scene, render_buf, SCREEN_WIDTH, SCREEN_HEIGHT, M3_ORIENTATION_HL);
 
     // Push new frame to display via Serial
+    Serial.write(0x00); // Command byte for display data
     Serial.write(render_buf, sizeof(render_buf));
     Serial.flush();
 
     // Don't overload serial output
-    delay(50);
+    // delay(50);
 }

@@ -1,4 +1,6 @@
 #include "../src/micro3d.h"
+#include "../src/cmd/cmd.h"
+
 #include <unistd.h>
 #include <stdio.h>
 #include <time.h>
@@ -11,16 +13,30 @@
 m3_scene_t scene;
 m3_ocamera_t camera;
 
-m3_object_handle_t geo;
-m3_segment_t geo_segments[16];
+#define MAX_OBJ_CT 4
+#define MAX_SEG_CT 16
 
-uint8_t render_buf[SCREEN_WIDTH * SCREEN_HEIGHT / 8];
+// Object/segment buffers
+m3_object_t obj_buf[MAX_OBJ_CT];
+m3_segment_t seg_buf[MAX_SEG_CT][MAX_SEG_CT];
+
+uint8_t render_buf[SCREEN_WIDTH * SCREEN_HEIGHT / 8 + 1];
+
+cmd_t myCmd;
+cmd_entry_t cmd_ebuf[4]; // Entry buf
+uint8_t cmd_bbuf[80];    // Recv buffer
 
 struct mg_mgr mgr;
 
 // Setup 3d scene
 void setup_scene();
 void loop();
+void broadcast(uint8_t* buf, size_t size);
+
+void handle_response(uint8_t rid, bool error, uint8_t response);
+void handle_cam(void*);
+void handle_obj(void*);
+void handle_seg(void*);
 
 static void handler(struct mg_connection *c, int ev, void *ev_data) {
     if (ev == MG_EV_HTTP_MSG) {
@@ -30,11 +46,24 @@ static void handler(struct mg_connection *c, int ev, void *ev_data) {
     else if (ev == MG_EV_WS_OPEN) {
         printf("Client connected\n");
     }
+    else if (ev == MG_EV_WS_MSG) {
+        struct mg_ws_message *wm = (struct mg_ws_message *) ev_data;
+
+        // Process message
+        for (int i = 0; i < wm->data.len; i++) {
+            cmd_recv(&myCmd, wm->data.buf[i]);
+        }
+    }
 }
 
 struct timespec start, last, now;
 int main() {
     setup_scene();
+
+    myCmd = cmd(cmd_ebuf, sizeof(cmd_ebuf) / sizeof(*cmd_ebuf), cmd_bbuf, sizeof(cmd_bbuf) / sizeof(*cmd_bbuf), '!');
+    cmd_attach(&myCmd, "cam", handle_cam, NULL);
+    cmd_attach(&myCmd, "obj", handle_obj, NULL);
+    cmd_attach(&myCmd, "seg", handle_seg, NULL);
 
     mg_mgr_init(&mgr);
 
@@ -49,82 +78,19 @@ int main() {
     return 0;
 }
 
-m3_object_t scene_objects[3];
-
 void setup_scene() {
     // --- Populate scene with a 3d arrow ---
 
     // Create the main scene
     m3_scene_create_s(
         &scene,
-        scene_objects,
-        sizeof(scene_objects) / sizeof(*scene_objects)
+        obj_bu
+        sizeof(obj_buf) / sizeof(*obj_buf)
     );
 
     // Create camera
     m3_ocamera_create_s(&camera, 8);
     m3_ocamera_resize(&camera, 128, 64);
-    // m3_ocamera_position(&camera, (m3_vec){ 16, 16, 16 });
-
-    // Create required objects
-    geo = m3_object_create(&scene);
-
-    // Assign objects to their buffers
-    m3_object_alloc_s(geo, geo_segments, sizeof(geo_segments) / sizeof(*geo_segments));
-
-    // Setup object hierarchy
-
-    // Define cube
-    m3_segment_handle_t so, s0, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, sm0, sm1, sm2;
-
-    m3_object_push_segment(geo, &so);
-    m3_object_push_segment(geo, &s0);
-    m3_object_push_segment(geo, &s1);
-    m3_object_push_segment(geo, &s2);
-    m3_object_push_segment(geo, &s3);
-    m3_object_push_segment(geo, &s4);
-    m3_object_push_segment(geo, &s5);
-    m3_object_push_segment(geo, &s6);
-    m3_object_push_segment(geo, &s7);
-    m3_object_push_segment(geo, &s8);
-    m3_object_push_segment(geo, &sm0);
-    m3_object_push_segment(geo, &s9);
-    m3_object_push_segment(geo, &sm1);
-    m3_object_push_segment(geo, &s10);
-    m3_object_push_segment(geo, &sm2);
-    m3_object_push_segment(geo, &s11);
-
-    // -- DEFINE GEOMETRY --
-    m3_segment_offset(so, (m3_vec) { .x = -2, .y = -2, .z = -2 });
-    m3_segment_color(so, M3_COLOR_INVISIBLE);
-
-    m3_segment_offset(s0, (m3_vec) { .x = 4, .y = 0, .z = 0 });
-    m3_segment_color(s0, M3_COLOR_FULL);
-    m3_segment_offset(s1, (m3_vec) { .x = 0, .y = 4, .z = 0 });
-    m3_segment_color(s1, M3_COLOR_DIM);
-    m3_segment_offset(s2, (m3_vec) { .x = -4, .y = 0, .z = 0 });
-    m3_segment_color(s2, M3_COLOR_DIM);
-    m3_segment_offset(s3, (m3_vec) { .x = 0, .y = -4, .z = 0 });
-    m3_segment_color(s3, M3_COLOR_DIM);
-
-    m3_segment_offset(s4, (m3_vec) { .x = 0, .y = 0, .z = 4 });
-    m3_segment_color(s4, M3_COLOR_DARK);
-    m3_segment_offset(s5, (m3_vec) { .x = 4, .y = 0, .z = 0 });
-    m3_segment_offset(s6, (m3_vec) { .x = 0, .y = 4, .z = 0 });
-    m3_segment_offset(s7, (m3_vec) { .x = -4, .y = 0, .z = 0 });
-    m3_segment_offset(s8, (m3_vec) { .x = 0, .y = -4, .z = 0 });
-
-    m3_segment_offset(sm0, (m3_vec) { .x = 4, .y = 0, .z = 0 });
-    m3_segment_color(sm0, M3_COLOR_INVISIBLE);
-    m3_segment_offset(s9, (m3_vec) { .x = 0, .y = 0, .z = -4 });
-
-    m3_segment_offset(sm1, (m3_vec) { .x = 0, .y = 4, .z = 0 });
-    m3_segment_color(sm1, M3_COLOR_INVISIBLE);
-    m3_segment_offset(s10, (m3_vec) { .x = 0, .y = 0, .z = 4 });
-
-    m3_segment_offset(sm2, (m3_vec) { .x = -4, .y = 0, .z = 0 });
-    m3_segment_color(sm2, M3_COLOR_INVISIBLE);
-    m3_segment_offset(s11, (m3_vec) { .x = 0, .y = 0, .z = -4 });
 }
 
 #define itts 24 // Steps per rotation
@@ -140,38 +106,102 @@ void loop() {
     last = now;
 
     // Clear render buffer for next pass
-    memset(render_buf, 0, sizeof(render_buf));
+    memset(render_buf + 1, 0, sizeof(render_buf) - 1);
 
-    // uint8_t i = millis() * (itts / 2000.0); // 2 seconds per rotation
-    float i = now_ms / 1000.0 * (itts / 8.0); // 2 seconds per rotation
+    // // Orbit around gizmo, looking down at it from an angle
+    // m3_vec dir = { 127 * cos(i * 2 * 3.14159 / (itts)), 127 * sin(i * 2 * 3.14159 / (itts)), 127 / 2 };
+    // m3_vec up = { 0, 0, 1 };
 
-    // Orbit around gizmo, looking down at it from an angle
-    m3_vec dir = { 127 * cos(i * 2 * 3.14159 / (itts)), 127 * sin(i * 2 * 3.14159 / (itts)), 127 / 2 };
-    m3_vec up = { 0, 0, 1 };
+    // m3_vec_normalize(&dir);
+    // m3_vec_normalize(&up);
 
-    m3_vec_normalize(&dir);
-    m3_vec_normalize(&up);
+    // m3_quat quat = m3_vec_to_quat(dir, up);
+    // m3_quat_normalize(&quat);
+    // // m3_ocamera_pivot(&camera, quat);
 
-    m3_quat quat = m3_vec_to_quat(dir, up);
-    m3_quat_normalize(&quat);
-    m3_ocamera_pivot(&camera, quat);
+    // m3_vec dirc = { 0, 127 * cos(i * 2 * 3.14159 / (itts * 2)), 127 * sin(i * 2 * 3.14159 / (itts * 2)) };
+    // m3_vec upc = { 1, 0, 0 };
 
-    m3_vec dirc = { 0, 127 * cos(i * 2 * 3.14159 / (itts * 2)), 127 * sin(i * 2 * 3.14159 / (itts * 2)) };
-    m3_vec upc = { 1, 0, 0 };
+    // m3_vec_normalize(&dirc);
+    // m3_vec_normalize(&upc);
 
-    m3_vec_normalize(&dirc);
-    m3_vec_normalize(&upc);
+    // quat = m3_vec_to_quat(dirc, upc);
+    // m3_quat_normalize(&quat);
+    // // m3_object_pivot(geo, quat);
 
-    quat = m3_vec_to_quat(dirc, upc);
-    m3_quat_normalize(&quat);
-    m3_object_pivot(geo, quat);
-
-    m3_ocamera_render(&camera, &scene, render_buf, SCREEN_WIDTH, SCREEN_HEIGHT, M3_ORIENTATION_HL);
+    m3_ocamera_render(&camera, &scene, render_buf + 1, SCREEN_WIDTH, SCREEN_HEIGHT, M3_ORIENTATION_HL);
 
     // Push new frame to display via socket
+    render_buf[0] = 0x00; // Command byte for display data
+    broadcast(render_buf, sizeof(render_buf));
+}
+
+void broadcast(uint8_t* buf, size_t size) {
     for (struct mg_connection *c = mgr.conns; c; c = c->next) {
         if (c->is_websocket) {
-            mg_ws_send(c, render_buf, sizeof(render_buf), WEBSOCKET_OP_BINARY);
+            mg_ws_send(c, buf, size, WEBSOCKET_OP_BINARY);
         }
     }
+}
+
+void handle_response(uint8_t rid, bool error, uint8_t response) {
+    uint8_t buf[2];
+
+    buf[0] = 0x80 | (error ? 0x40 : 0x00) | (rid & 0x3F);
+    buf[1] = response;
+
+    broadcast(buf, sizeof(buf));
+}
+
+void handle_cam(void*) {
+    uint8_t rid = cmd_ogeti(&myCmd, 1, 0xFF);
+    const char* subcmd = cmd_ogets(&myCmd, 2, "");
+
+    if (rid >= 64) return; // Invalid rid
+
+    if (strcmp(subcmd, "pos") == 0) {
+        int8_t x = cmd_ogeti(&myCmd, 3, 0);
+        int8_t y = cmd_ogeti(&myCmd, 4, 0);
+        int8_t z = cmd_ogeti(&myCmd, 5, 0);
+
+        m3_ocamera_position(&camera, (m3_vec){ x, y, z });
+        handle_response(rid, false, 0);
+        return;
+    }
+
+    if (strcmp(subcmd, "pivot") == 0) {
+        int8_t x = cmd_ogeti(&myCmd, 3, 0);
+        int8_t y = cmd_ogeti(&myCmd, 4, 0);
+        int8_t z = cmd_ogeti(&myCmd, 5, 0);
+        int8_t w = cmd_ogeti(&myCmd, 6, 0);
+
+        m3_ocamera_pivot(&camera, (m3_quat){ x, y, z, w });
+        handle_response(rid, false, 0);
+        return;
+    }
+}
+
+void handle_obj(void*) {
+    uint8_t rid = cmd_ogeti(&myCmd, 1, 0xFF);
+    const char* subcmd = cmd_ogets(&myCmd, 2, "");
+
+    if (strcmp(subcmd, "create")) {
+        m3_object_handle_t obj = m3_object_create(&scene);
+        
+        // Failed to allocate object
+        if (!m3_object_exists(obj));[
+            handle_response(rid, true, 0);
+            return;
+        ]
+
+        // Allocate segment memory for object based on internal id
+        m3_object_alloc_s(&obj, seg_buf[obj.id], sizeof(*seg_buf) / sizeof(**seg_buf));
+
+        handle_response(rid, false, obj.id);
+        return;
+    }
+}
+
+void handle_seg(void*) {
+
 }
