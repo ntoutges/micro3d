@@ -33,6 +33,19 @@ m3_scene_handle_t m3_scene_create_s(
     uint8_t obj_size
 );
 
+/**
+ * Get an object handle by its id
+ * Note that this object is not garunteed to exist
+ * 
+ * @param scene The scene from which the object is searched
+ * @param id    The id of the object within the scene tor grab
+ * @return      The handle of the object, that may not exist
+ */
+m3_object_handle_t m3_scene_object_get(
+    m3_scene_t* scene,
+    uint8_t id
+);
+
 #ifdef __cplusplus
 }
 #endif

@@ -38,6 +38,16 @@ m3_scene_handle_t m3_scene_create_s(
     return scene;
 }
 
+m3_object_handle_t m3_scene_object_get(
+    m3_scene_t* scene,
+    uint8_t id
+) {
+    return (m3_object_handle_t) {
+        .owner = scene,
+        .id = id
+    };
+}
+
 /**
  * Return the index of some available object slot. Runs in O(n) time
  * @param scene The scene to search within; Scene is assumed to exist.
