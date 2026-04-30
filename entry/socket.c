@@ -62,8 +62,9 @@ void setup_scene() {
     );
 
     // Create camera
-    m3_ocamera_create_s(&camera, 4);
+    m3_ocamera_create_s(&camera, 8);
     m3_ocamera_resize(&camera, 128, 64);
+    // m3_ocamera_position(&camera, (m3_vec){ 16, 16, 16 });
 
     // Create required objects
     geo = m3_object_create(&scene);
@@ -94,8 +95,11 @@ void setup_scene() {
     m3_object_push_segment(geo, &s11);
 
     // -- DEFINE GEOMETRY --
+    m3_segment_offset(so, (m3_vec) { .x = -2, .y = -2, .z = -2 });
+    m3_segment_color(so, M3_COLOR_INVISIBLE);
+
     m3_segment_offset(s0, (m3_vec) { .x = 4, .y = 0, .z = 0 });
-    m3_segment_color(s0, M3_COLOR_DIM);
+    m3_segment_color(s0, M3_COLOR_FULL);
     m3_segment_offset(s1, (m3_vec) { .x = 0, .y = 4, .z = 0 });
     m3_segment_color(s1, M3_COLOR_DIM);
     m3_segment_offset(s2, (m3_vec) { .x = -4, .y = 0, .z = 0 });
@@ -104,6 +108,7 @@ void setup_scene() {
     m3_segment_color(s3, M3_COLOR_DIM);
 
     m3_segment_offset(s4, (m3_vec) { .x = 0, .y = 0, .z = 4 });
+    m3_segment_color(s4, M3_COLOR_DARK);
     m3_segment_offset(s5, (m3_vec) { .x = 4, .y = 0, .z = 0 });
     m3_segment_offset(s6, (m3_vec) { .x = 0, .y = 4, .z = 0 });
     m3_segment_offset(s7, (m3_vec) { .x = -4, .y = 0, .z = 0 });
@@ -138,7 +143,7 @@ void loop() {
     memset(render_buf, 0, sizeof(render_buf));
 
     // uint8_t i = millis() * (itts / 2000.0); // 2 seconds per rotation
-    float i = now_ms / 1000.0 * (itts / 3.0); // 2 seconds per rotation
+    float i = now_ms / 1000.0 * (itts / 8.0); // 2 seconds per rotation
 
     // Orbit around gizmo, looking down at it from an angle
     m3_vec dir = { 127 * cos(i * 2 * 3.14159 / (itts)), 127 * sin(i * 2 * 3.14159 / (itts)), 127 / 2 };
@@ -148,10 +153,19 @@ void loop() {
     m3_vec_normalize(&up);
 
     m3_quat quat = m3_vec_to_quat(dir, up);
-
     m3_quat_normalize(&quat);
-
     m3_ocamera_pivot(&camera, quat);
+
+    m3_vec dirc = { 0, 127 * cos(i * 2 * 3.14159 / (itts * 2)), 127 * sin(i * 2 * 3.14159 / (itts * 2)) };
+    m3_vec upc = { 1, 0, 0 };
+
+    m3_vec_normalize(&dirc);
+    m3_vec_normalize(&upc);
+
+    quat = m3_vec_to_quat(dirc, upc);
+    m3_quat_normalize(&quat);
+    m3_object_pivot(geo, quat);
+
     m3_ocamera_render(&camera, &scene, render_buf, SCREEN_WIDTH, SCREEN_HEIGHT, M3_ORIENTATION_HL);
 
     // Push new frame to display via socket
