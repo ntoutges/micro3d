@@ -46,6 +46,12 @@ m3_object_handle_t m3_scene_object_get(
     uint8_t id
 );
 
+/**
+ * Clear a scene, removing all objects and segments
+ * @param scene The scene to clear
+ */
+void m3_scene_clear(m3_scene_t* scene);
+
 #ifdef __cplusplus
 }
 #endif

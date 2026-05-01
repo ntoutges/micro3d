@@ -48,6 +48,24 @@ m3_object_handle_t m3_scene_object_get(
     };
 }
 
+void m3_scene_clear(m3_scene_t* scene) {
+    
+    // Clear all objects
+    uint16_t size = scene->obj_size == 0 ? 256 : scene->obj_size;
+    m3_object_t* obj;
+    for (uint16_t i = 0; i < size; i++) {
+        obj = &scene->obj_buf[i];
+
+        if (!obj->_marker || obj->smem) continue; // Slot unoccupied/No dynamic memory to free
+        
+        // Free up dynamically allocated memory
+        free(obj->segments);
+    }
+
+    // Mark all object entries as empty
+    memset(scene->obj_buf, 0, ((int) scene->obj_size) * sizeof(*scene->obj_buf));
+}
+
 /**
  * Return the index of some available object slot. Runs in O(n) time
  * @param scene The scene to search within; Scene is assumed to exist.

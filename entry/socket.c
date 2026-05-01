@@ -183,6 +183,23 @@ void handle_cam(void*) {
         return;
     }
 
+    if (strcmp(subcmd, "resize") == 0) {
+        uint8_t width = cmd_ogeti(&myCmd, 3, 0);
+        uint8_t height = cmd_ogeti(&myCmd, 4, 0);
+
+        m3_ocamera_resize(&camera, width, height);
+        handle_response(rid, false, 0);
+        return;
+    }
+
+    if (strcmp(subcmd, "clear") == 0) {
+        m3_scene_clear(&scene);
+
+        handle_response(rid, false, 0);
+        return;
+    }
+
+
     handle_response(rid, true, 19); // Unhandled command
 }
 

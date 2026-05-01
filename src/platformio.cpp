@@ -5,8 +5,8 @@
 
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT 64 // OLED display height, in pixels
-#define MAX_OBJ_CT 4
 
+#define MAX_OBJ_CT 4
 #define MAX_SEG_CT 16
 
 m3_scene_t scene;
@@ -58,6 +58,11 @@ void setup_scene() {
 
 void loop() {
 
+    // Check for commands
+    while (Serial.available()) {
+        cmd_recv(&myCmd, Serial.read());
+    }
+
     // Clear render buffer for next pass
     memset(render_buf, 0, sizeof(render_buf));
 
@@ -105,7 +110,24 @@ void handle_cam(void*) {
         return;
     }
 
-    handle_response(rid, true, 0xFF); // Unhandled command
+    if (strcmp(subcmd, "resize") == 0) {
+        uint8_t width = cmd_ogeti(&myCmd, 3, 0);
+        uint8_t height = cmd_ogeti(&myCmd, 4, 0);
+
+        m3_ocamera_resize(&camera, width, height);
+        handle_response(rid, false, 0);
+        return;
+    }
+
+    if (strcmp(subcmd, "clear") == 0) {
+        m3_scene_clear(&scene);
+
+        handle_response(rid, false, 0);
+        return;
+    }
+
+
+    handle_response(rid, true, 19); // Unhandled command
 }
 
 void handle_obj(void*) {
@@ -117,7 +139,7 @@ void handle_obj(void*) {
         
         // Failed to allocate object
         if (!m3_object_exists(obj)) {
-            handle_response(rid, true, 0);
+            handle_response(rid, true, 20);
             return;
         }
 
@@ -135,14 +157,14 @@ void handle_obj(void*) {
         // Ensure object exists
         m3_object_handle_t obj = m3_scene_object_get(&scene, id);
         if (!m3_object_exists(obj)) {
-            handle_response(rid, true, 0);
+            handle_response(rid, true, 21);
             return;
         }
 
         // Ensure parent exists
         m3_object_handle_t objp = m3_scene_object_get(&scene, parent);
         if (!m3_object_exists(objp)) {
-            handle_response(rid, true, 1);
+            handle_response(rid, true, 22);
             return;
         }
 
@@ -161,7 +183,7 @@ void handle_obj(void*) {
         // Ensure object exists
         m3_object_handle_t obj = m3_scene_object_get(&scene, id);
         if (!m3_object_exists(obj)) {
-            handle_response(rid, true, 0);
+            handle_response(rid, true, 23);
             return;
         }
 
@@ -181,7 +203,7 @@ void handle_obj(void*) {
         // Ensure object exists
         m3_object_handle_t obj = m3_scene_object_get(&scene, id);
         if (!m3_object_exists(obj)) {
-            handle_response(rid, true, 0);
+            handle_response(rid, true, 24);
             return;
         }
         
@@ -198,7 +220,7 @@ void handle_obj(void*) {
         // Ensure object exists
         m3_object_handle_t obj = m3_scene_object_get(&scene, id);
         if (!m3_object_exists(obj)) {
-            handle_response(rid, true, 0);
+            handle_response(rid, true, 25);
             return;
         }
 
@@ -216,7 +238,7 @@ void handle_obj(void*) {
         // Ensure object exists
         m3_object_handle_t obj = m3_scene_object_get(&scene, id);
         if (!m3_object_exists(obj)) {
-            handle_response(rid, true, 0);
+            handle_response(rid, true, 26);
             return;
         }
 
@@ -226,36 +248,13 @@ void handle_obj(void*) {
         return;
     }
 
-    if (strcmp(subcmd, "segment") == 0) {
-        uint8_t id = cmd_ogeti(&myCmd, 3, 0);
-
-        // Ensure object exists
-        m3_object_handle_t obj = m3_scene_object_get(&scene, id);
-        if (!m3_object_exists(obj)) {
-            handle_response(rid, true, 0);
-            return;
-        }
-
-        // Attempt to allocate segment
-        m3_segment_handle_t seg;
-        m3_object_ires_t res = m3_object_push_segment(obj, &seg);
-        if (res.err != 0 || !m3_segment_exists(seg)) {
-            handle_response(rid, true, res.err);
-            return;
-        }
-
-        // Success!
-        handle_response(rid, false, seg.id);
-        return;
-    }
-
     if (strcmp(subcmd, "clear") == 0) {
         uint8_t id = cmd_ogeti(&myCmd, 3, 0);
 
         // Ensure object exists
         m3_object_handle_t obj = m3_scene_object_get(&scene, id);
         if (!m3_object_exists(obj)) {
-            handle_response(rid, true, 0);
+            handle_response(rid, true, 27);
             return;
         }
 
@@ -265,26 +264,42 @@ void handle_obj(void*) {
         return;
     }
 
-    handle_response(rid, true, 0xFF); // Unhandled command
+    handle_response(rid, true, 39); // Unhandled command
 }
 
 void handle_seg(void*) {
     uint8_t rid = cmd_ogeti(&myCmd, 1, 0xFF);
     const char* subcmd = cmd_ogets(&myCmd, 2, "");
     uint8_t objId = cmd_ogeti(&myCmd, 3, 0);
-    uint8_t id = cmd_ogeti(&myCmd, 4, 0);
 
     // Invalid obejct id
     m3_object_handle_t obj = m3_scene_object_get(&scene, objId);
     if (!m3_object_exists(obj)) {
-        handle_response(rid, true, 0);
+        handle_response(rid, true, 40);
         return;
     }
 
+    if (strcmp(subcmd, "create") == 0) {
+
+        // Attempt to allocate segment
+        m3_segment_handle_t seg;
+        m3_object_ires_t res = m3_object_push_segment(obj, &seg);
+        if (res.err != 0 || !m3_segment_exists(seg)) {
+            handle_response(rid, true, 41);
+            return;
+        }
+
+        // Success!
+        handle_response(rid, false, seg.id);
+        return;
+
+    }
+
     // Invalid segment id
+    uint8_t id = cmd_ogeti(&myCmd, 4, 0);
     m3_segment_handle_t seg = m3_object_segment_get(obj, id);
     if (!m3_segment_exists(seg)) {
-        handle_response(rid, true, 1);
+        handle_response(rid, true, 42);
         return;
     }
 
@@ -314,5 +329,5 @@ void handle_seg(void*) {
         return;
     }
 
-    handle_response(rid, true, 0xFF); // Unhandled command
+    handle_response(rid, true, 59); // Unhandled command
 }
